@@ -118,8 +118,10 @@ def suggested_symbols(user_id):
         for symbol in watchlist:
             try:
                 bars = api.get_bars(symbol, timeframe="1Day", limit=2).df
+                print(f"📊 {symbol} bars:\n{bars}")
 
                 if len(bars) < 2:
+                    print(f"⚠️ Not enough bars for {symbol}")
                     continue
 
                 yesterday = bars.iloc[-2]
@@ -136,12 +138,14 @@ def suggested_symbols(user_id):
                 })
 
             except Exception as e:
-                print(f"Error processing {symbol}: {e}")
+                print(f"❌ Error processing {symbol}: {e}")
                 continue
 
+        print(f"✅ Final Suggestions: {suggestions}")
         return jsonify(suggestions), 200
 
     except Exception as e:
+        print(f"🔥 Error fetching suggestions: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
