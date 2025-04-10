@@ -60,25 +60,24 @@
 
   <h1>🚀 Trading Bot Dashboard</h1>
 
-  <label for="user">🔑 Enter your User ID</label>
-  <input type="text" id="user" placeholder="e.g. ankit123" oninput="updateDashboard()">
+  <label for="userId">🔑 Enter your User ID</label>
+  <input type="text" id="userId" placeholder="e.g. ankit123" oninput="loadUserData()">
 
   <div class="box">
     <strong>🔗 Webhook URL:</strong>
-    <button class="copy-btn" onclick="copyText('webhook')">📋 Copy</button>
-    <p id="webhook">https://multi-user-trading-bot.onrender.com/webhook/</p>
+    <button class="copy-btn" onclick="copyText('webhookUrlText')">📋 Copy</button>
+    <p id="webhookUrl">https://multi-user-trading-bot.onrender.com/webhook/</p>
+    <input type="text" id="webhookUrlText" readonly style="display:none;">
   </div>
 
   <div class="box">
     <strong>📦 Sample TradingView Alert JSON:</strong>
-    <button class="copy-btn" onclick="copyText('alert')">📋 Copy</button>
-    <pre id="alert">
-{
+    <button class="copy-btn" onclick="copyText('alertJsonText')">📋 Copy</button>
+    <textarea id="alertJsonText" rows="5">{
   "symbol": "AAPL",
   "action": "buy",
   "quantity": 1
-}
-    </pre>
+}</textarea>
   </div>
 
   <div class="box">
@@ -117,91 +116,89 @@
     </table>
   </div>
 
-  <script>
-    let user = "";
+<script>
+  function loadUserData() {
+    const user = document.getElementById("userId").value.trim();
+    if (!user) return;
 
-    function updateDashboard() {
-      user = document.getElementById("user").value;
-      document.getElementById("webhook").innerText = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
+    // Webhook
+    const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
+    document.getElementById("webhookUrl").innerText = webhookUrl;
+    document.getElementById("webhookUrlText").value = webhookUrl;
+    document.getElementById("alertJsonText").value = `{\n  "symbol": "AAPL",\n  "action": "buy",\n  "quantity": 1\n}`;
 
-      if (user.length > 2) {
-        fetchLogs();
-        fetchSuggestions();
-      }
-    }
-
-    function copyText(id) {
-      const text = document.getElementById(id).innerText;
-      navigator.clipboard.writeText(text).then(() => {
-        alert("Copied to clipboard!");
-      });
-    }
-
-    function fetchLogs() {
-      fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
-        .then(res => res.json())
-        .then(logs => {
-          const tbody = document.getElementById("log-body");
-          tbody.innerHTML = "";
-          if (logs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5">No trades found</td></tr>`;
-          } else {
-            logs.forEach(log => {
-              tbody.innerHTML += `
-                <tr>
-                  <td>${log.timestamp}</td>
-                  <td>${log.symbol}</td>
-                  <td>${log.action}</td>
-                  <td>${log.quantity}</td>
-                  <td>${log.status}</td>
-                </tr>`;
-            });
-          }
-        });
-    }
-
-    function fetchSuggestions() {
-      fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
-        .then(res => res.json())
-        .then(suggestions => {
-          const tbody = document.getElementById("suggested-body");
-          tbody.innerHTML = "";
-          if (suggestions.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5">No suggestions found</td></tr>`;
-          } else {
-            suggestions.forEach(item => {
-              tbody.innerHTML += `
-                <tr>
-                  <td>${item.symbol}</td>
-                  <td>$${item.current_price}</td>
-                  <td>${item.change_percent}%</td>
-                  <td>${item.suggestion}</td>
-                  <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
-                </tr>`;
-            });
-          }
-        });
-    }
-
-    function autoTrade(symbol, action) {
-      const body = {
-        symbol: symbol,
-        action: action,
-        quantity: 1
-      };
-
-      fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      })
+    // 🔁 Load trade logs
+    fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
       .then(res => res.json())
-      .then(response => {
-        alert(`✅ ${symbol} ${action.toUpperCase()} order sent.\nResponse: ${JSON.stringify(response)}`);
-        fetchLogs(); // Refresh logs
+      .then(logs => {
+        const tbody = document.getElementById("log-body");
+        tbody.innerHTML = "";
+        logs.forEach(log => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${log.timestamp}</td>
+              <td>${log.symbol}</td>
+              <td>${log.action}</td>
+              <td>${log.quantity}</td>
+              <td>${log.status}</td>
+            </tr>`;
+        });
+      });
+
+    // 🔁 Load suggestions
+    fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
+      .then(res => res.json())
+      .then(suggestions => {
+        const tbody = document.getElementById("suggested-body");
+        tbody.innerHTML = "";
+        suggestions.forEach(item => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${item.symbol}</td>
+              <td>$${item.current_price}</td>
+              <td>${item.change_percent}%</td>
+              <td>${item.suggestion}</td>
+              <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
+            </tr>`;
+        });
       })
-      .catch(() => alert("❌ Failed to send trade."));
-    }
-  </script>
+      .catch(err => {
+        console.error("❌ Error fetching suggestions:", err);
+        document.getElementById("suggested-body").innerHTML = `<tr><td colspan="5">Failed to fetch suggestions.</td></tr>`;
+      });
+  }
+
+  function autoTrade(symbol, action) {
+    const user = document.getElementById("userId").value.trim();
+    if (!user) return;
+
+    fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        symbol,
+        action,
+        quantity: 1
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert("✅ Auto trade response: " + JSON.stringify(data));
+      loadUserData();  // Reload logs
+    })
+    .catch(err => alert("❌ Error placing order: " + err));
+  }
+
+  function copyText(id) {
+    const el = document.getElementById(id);
+    el.style.display = "block";
+    el.select();
+    document.execCommand("copy");
+    el.style.display = "none";
+    alert("✅ Copied to clipboard");
+  }
+</script>
 </body>
 </html>
