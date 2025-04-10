@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import alpaca_trade_api as tradeapi
 import json
 import os
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -9,6 +10,22 @@ app = Flask(__name__)
 def load_users():
     with open("users.json", "r") as f:
         return json.load(f)
+
+# Log trade to logs/<user_id>.json
+def log_trade(user_id, log_data):
+    os.makedirs("logs", exist_ok=True)
+    log_file = f"logs/{user_id}.json"
+
+    logs = []
+    if os.path.exists(log_file):
+        with open(log_file, "r") as f:
+            logs = json.load(f)
+
+    logs.insert(0, log_data)  # newest on top
+    logs = logs[:20]  # keep only last 20
+
+    with open(log_file, "w") as f:
+        json.dump(logs, f, indent=2)
 
 @app.route("/")
 def home():
@@ -41,7 +58,6 @@ def webhook(user_id):
             base_url="https://paper-api.alpaca.markets"
         )
 
-        # Submit order
         order = api.submit_order(
             symbol=symbol,
             qty=quantity,
@@ -51,13 +67,36 @@ def webhook(user_id):
         )
 
         print(f"✅ [{user_id}] Order placed: {symbol} {action.upper()} x{quantity}")
+
+        log_trade(user_id, {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "symbol": symbol,
+            "action": action.capitalize(),
+            "quantity": quantity,
+            "status": "✅"
+        })
+
         return jsonify({"status": "success", "order_id": order.id}), 200
 
     except Exception as e:
         print(f"❌ [{user_id}] Order failed:", str(e))
+        log_trade(user_id, {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "symbol": symbol,
+            "action": action.capitalize(),
+            "quantity": quantity,
+            "status": "❌"
+        })
         return jsonify({"status": "error", "message": str(e)}), 500
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # use 10000 locally, else Render's port
-    app.run(host="0.0.0.0", port=port)
+@app.route("/logs/<user_id>", methods=["GET"])
+def get_logs(user_id):
+    log_file = f"logs/{user_id}.json"
+    if os.path.exists(log_file):
+        with open(log_file, "r") as f:
+            return jsonify(json.load(f))
+    return jsonify([])
 
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
