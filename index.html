@@ -117,15 +117,12 @@
   </div>
 
 <script>
-  function loadUserData() {
-    const user = document.getElementById("userId").value.trim();
+  function updateDashboard() {
+    const user = document.getElementById("user").value.trim();
     if (!user) return;
 
     // Webhook
-    const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
-    document.getElementById("webhookUrl").innerText = webhookUrl;
-    document.getElementById("webhookUrlText").value = webhookUrl;
-    document.getElementById("alertJsonText").value = `{\n  "symbol": "AAPL",\n  "action": "buy",\n  "quantity": 1\n}`;
+    document.getElementById("webhook").innerText = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
 
     // 🔁 Load trade logs
     fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
@@ -169,7 +166,7 @@
   }
 
   function autoTrade(symbol, action) {
-    const user = document.getElementById("userId").value.trim();
+    const user = document.getElementById("user").value.trim();
     if (!user) return;
 
     fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
@@ -186,18 +183,15 @@
     .then(res => res.json())
     .then(data => {
       alert("✅ Auto trade response: " + JSON.stringify(data));
-      loadUserData();  // Reload logs
+      updateDashboard();  // Reload logs
     })
     .catch(err => alert("❌ Error placing order: " + err));
   }
 
   function copyText(id) {
-    const el = document.getElementById(id);
-    el.style.display = "block";
-    el.select();
-    document.execCommand("copy");
-    el.style.display = "none";
-    alert("✅ Copied to clipboard");
+    const text = document.getElementById(id).innerText || document.getElementById(id).value;
+    navigator.clipboard.writeText(text);
+    alert("📋 Copied to clipboard!");
   }
 </script>
 </body>
