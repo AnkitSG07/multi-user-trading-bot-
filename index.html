@@ -10,7 +10,7 @@
       background-color: #f5f7fa;
       color: #333;
       padding: 2rem;
-      max-width: 600px;
+      max-width: 900px;
       margin: auto;
     }
     h1 { color: #2c3e50; }
@@ -23,8 +23,8 @@
       border-radius: 5px;
     }
     button {
-      margin-top: 1rem;
-      padding: 0.6rem 1.2rem;
+      margin-top: 0.5rem;
+      padding: 0.4rem 1rem;
       background-color: #007bff;
       color: white;
       border: none;
@@ -39,6 +39,17 @@
       margin-top: 1rem;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      text-align: center;
+      padding: 0.5rem;
+      border-bottom: 1px solid #ddd;
+    }
+    th { background-color: #007bff; color: white; }
     .copy-btn {
       float: right;
       margin-top: -2.5rem;
@@ -50,7 +61,7 @@
   <h1>🚀 Trading Bot Dashboard</h1>
 
   <label for="user">🔑 Enter your User ID</label>
-  <input type="text" id="user" placeholder="e.g. ankit123" oninput="updateWebhook()">
+  <input type="text" id="user" placeholder="e.g. ankit123" oninput="updateDashboard()">
 
   <div class="box">
     <strong>🔗 Webhook URL:</strong>
@@ -70,13 +81,53 @@
     </pre>
   </div>
 
-  <script>
-    function updateWebhook() {
-      const user = document.getElementById("user").value;
-      const webhook = document.getElementById("webhook");
-      const alert = document.getElementById("alert");
+  <div class="box">
+    <strong>📊 Recent Trades:</strong>
+    <table id="trade-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Symbol</th>
+          <th>Action</th>
+          <th>Qty</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="log-body">
+        <tr><td colspan="5">Enter a user ID to load trades</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-      webhook.innerText = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
+  <div class="box">
+    <strong>🔥 Suggested Trades (via Alpaca)</strong>
+    <table id="suggested-table">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Price</th>
+          <th>Change%</th>
+          <th>Suggestion</th>
+          <th>Auto Trade</th>
+        </tr>
+      </thead>
+      <tbody id="suggested-body">
+        <tr><td colspan="5">Enter User ID to load suggestions</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    let user = "";
+
+    function updateDashboard() {
+      user = document.getElementById("user").value;
+      document.getElementById("webhook").innerText = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
+
+      if (user.length > 2) {
+        fetchLogs();
+        fetchSuggestions();
+      }
     }
 
     function copyText(id) {
@@ -84,6 +135,72 @@
       navigator.clipboard.writeText(text).then(() => {
         alert("Copied to clipboard!");
       });
+    }
+
+    function fetchLogs() {
+      fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
+        .then(res => res.json())
+        .then(logs => {
+          const tbody = document.getElementById("log-body");
+          tbody.innerHTML = "";
+          if (logs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5">No trades found</td></tr>`;
+          } else {
+            logs.forEach(log => {
+              tbody.innerHTML += `
+                <tr>
+                  <td>${log.timestamp}</td>
+                  <td>${log.symbol}</td>
+                  <td>${log.action}</td>
+                  <td>${log.quantity}</td>
+                  <td>${log.status}</td>
+                </tr>`;
+            });
+          }
+        });
+    }
+
+    function fetchSuggestions() {
+      fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
+        .then(res => res.json())
+        .then(suggestions => {
+          const tbody = document.getElementById("suggested-body");
+          tbody.innerHTML = "";
+          if (suggestions.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5">No suggestions found</td></tr>`;
+          } else {
+            suggestions.forEach(item => {
+              tbody.innerHTML += `
+                <tr>
+                  <td>${item.symbol}</td>
+                  <td>$${item.current_price}</td>
+                  <td>${item.change_percent}%</td>
+                  <td>${item.suggestion}</td>
+                  <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
+                </tr>`;
+            });
+          }
+        });
+    }
+
+    function autoTrade(symbol, action) {
+      const body = {
+        symbol: symbol,
+        action: action,
+        quantity: 1
+      };
+
+      fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      })
+      .then(res => res.json())
+      .then(response => {
+        alert(`✅ ${symbol} ${action.toUpperCase()} order sent.\nResponse: ${JSON.stringify(response)}`);
+        fetchLogs(); // Refresh logs
+      })
+      .catch(() => alert("❌ Failed to send trade."));
     }
   </script>
 </body>
