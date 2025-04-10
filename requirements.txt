@@ -1,2 +1,3 @@
 Flask
 alpaca-trade-api
+gunicorn
