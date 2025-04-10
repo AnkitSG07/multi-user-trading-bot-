@@ -97,56 +97,46 @@ def get_logs(user_id):
             return jsonify(json.load(f))
     return jsonify([])
 
+import requests
+
 @app.route("/suggested/<user_id>", methods=["GET"])
 def suggested_symbols(user_id):
     users = load_users()
-
     if user_id not in users:
         return jsonify({"status": "error", "message": "Invalid user"}), 404
 
-    user = users[user_id]
-    api = tradeapi.REST(
-        key_id=user["api_key"],
-        secret_key=user["secret_key"],
-        base_url="https://paper-api.alpaca.markets"
-    )
-
+    # TwelveData API key (you can hardcode or store in .env if needed)
+    TD_API_KEY = "732be95d470647be80419085887d2606"
     watchlist = ["AAPL", "TSLA", "MSFT", "AMZN", "GOOG"]
     suggestions = []
 
-    try:
-        for symbol in watchlist:
-            try:
-                bars = api.get_bars(symbol, timeframe="1Day", limit=2).df
-                print(f"📊 {symbol} bars:\n{bars}")
+    for symbol in watchlist:
+        try:
+            url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&outputsize=2&apikey={TD_API_KEY}"
+            response = requests.get(url)
+            data = response.json()
 
-                if len(bars) < 2:
-                    print(f"⚠️ Not enough bars for {symbol}")
-                    continue
-
-                yesterday = bars.iloc[-2]
-                today = bars.iloc[-1]
-
-                change = round(((today.close - yesterday.close) / yesterday.close) * 100, 2)
-                suggestion = "Buy" if change < -2 else "Sell" if change > 2 else "Hold"
-
-                suggestions.append({
-                    "symbol": symbol,
-                    "current_price": round(today.close, 2),
-                    "change_percent": change,
-                    "suggestion": suggestion
-                })
-
-            except Exception as e:
-                print(f"❌ Error processing {symbol}: {e}")
+            if "values" not in data or len(data["values"]) < 2:
+                print(f"⚠️ Not enough data for {symbol}")
                 continue
 
-        print(f"✅ Final Suggestions: {suggestions}")
-        return jsonify(suggestions), 200
+            today = float(data["values"][0]["close"])
+            yesterday = float(data["values"][1]["close"])
+            change = round(((today - yesterday) / yesterday) * 100, 2)
+            suggestion = "Buy" if change < -2 else "Sell" if change > 2 else "Hold"
 
-    except Exception as e:
-        print(f"🔥 Error fetching suggestions: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+            suggestions.append({
+                "symbol": symbol,
+                "current_price": today,
+                "change_percent": change,
+                "suggestion": suggestion
+            })
+
+        except Exception as e:
+            print(f"❌ Error fetching data for {symbol}: {e}")
+            continue
+
+    return jsonify(suggestions), 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
