@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trading Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f7fa;
+      color: #333;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 { color: #2c3e50; }
+    label { display: block; margin-top: 1rem; }
+    input, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.2rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.6rem 1.2rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover { background-color: #0056b3; }
+    .box {
+      background-color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .copy-btn {
+      float: right;
+      margin-top: -2.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🚀 Trading Bot Dashboard</h1>
+
+  <label for="user">🔑 Enter your User ID</label>
+  <input type="text" id="user" placeholder="e.g. ankit123" oninput="updateWebhook()">
+
+  <div class="box">
+    <strong>🔗 Webhook URL:</strong>
+    <button class="copy-btn" onclick="copyText('webhook')">📋 Copy</button>
+    <p id="webhook">https://multi-user-trading-bot.onrender.com/webhook/</p>
+  </div>
+
+  <div class="box">
+    <strong>📦 Sample TradingView Alert JSON:</strong>
+    <button class="copy-btn" onclick="copyText('alert')">📋 Copy</button>
+    <pre id="alert">
+{
+  "symbol": "AAPL",
+  "action": "buy",
+  "quantity": 1
+}
+    </pre>
+  </div>
+
+  <script>
+    function updateWebhook() {
+      const user = document.getElementById("user").value;
+      const webhook = document.getElementById("webhook");
+      const alert = document.getElementById("alert");
+
+      webhook.innerText = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
+    }
+
+    function copyText(id) {
+      const text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied to clipboard!");
+      });
+    }
+  </script>
+</body>
+</html>
