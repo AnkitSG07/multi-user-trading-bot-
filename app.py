@@ -115,14 +115,15 @@ def suggested_symbols(user_id):
 
     try:
         bars = api.get_bars(watchlist, timeframe="1Day", limit=2).df
-        bars = bars.reset_index()  # ✅ Fix for missing 'symbol'
-
         suggestions = []
+
         for symbol in watchlist:
             try:
-                df = bars[bars["symbol"] == symbol]
+                df = bars[bars.index.get_level_values("symbol") == symbol]
                 if len(df) < 2:
                     continue
+
+                df = df.reset_index()
 
                 yesterday = df.iloc[-2]
                 today = df.iloc[-1]
