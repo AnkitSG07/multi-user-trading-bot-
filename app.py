@@ -5,12 +5,6 @@ import os
 
 app = Flask(__name__)
 
-api = tradeapi.REST(
-    key_id=os.environ.get(f"{user_id.upper()}_API_KEY"),
-    secret_key=os.environ.get(f"{user_id.upper()}_SECRET_KEY"),
-    base_url="https://paper-api.alpaca.markets"
-)
-
 # Load user credentials from users.json
 def load_users():
     with open("users.json", "r") as f:
