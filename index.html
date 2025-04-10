@@ -117,12 +117,14 @@
   </div>
 
 <script>
-  function updateDashboard() {
-    const user = document.getElementById("user").value.trim();
+  function loadUserData() {
+    const user = document.getElementById("userId").value.trim();
     if (!user) return;
 
-    // Webhook
-    document.getElementById("webhook").innerText = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
+    // Webhook section update
+    const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
+    document.getElementById("webhookUrl").innerText = webhookUrl;
+    document.getElementById("webhookUrlText").value = webhookUrl;
 
     // 🔁 Load trade logs
     fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
@@ -130,16 +132,20 @@
       .then(logs => {
         const tbody = document.getElementById("log-body");
         tbody.innerHTML = "";
-        logs.forEach(log => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${log.timestamp}</td>
-              <td>${log.symbol}</td>
-              <td>${log.action}</td>
-              <td>${log.quantity}</td>
-              <td>${log.status}</td>
-            </tr>`;
-        });
+        if (logs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5">No recent trades.</td></tr>`;
+        } else {
+          logs.forEach(log => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${log.timestamp}</td>
+                <td>${log.symbol}</td>
+                <td>${log.action}</td>
+                <td>${log.quantity}</td>
+                <td>${log.status}</td>
+              </tr>`;
+          });
+        }
       });
 
     // 🔁 Load suggestions
@@ -148,16 +154,20 @@
       .then(suggestions => {
         const tbody = document.getElementById("suggested-body");
         tbody.innerHTML = "";
-        suggestions.forEach(item => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${item.symbol}</td>
-              <td>$${item.current_price}</td>
-              <td>${item.change_percent}%</td>
-              <td>${item.suggestion}</td>
-              <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
-            </tr>`;
-        });
+        if (suggestions.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5">No suggestions at the moment.</td></tr>`;
+        } else {
+          suggestions.forEach(item => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${item.symbol}</td>
+                <td>$${item.current_price}</td>
+                <td>${item.change_percent}%</td>
+                <td>${item.suggestion}</td>
+                <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
+              </tr>`;
+          });
+        }
       })
       .catch(err => {
         console.error("❌ Error fetching suggestions:", err);
@@ -166,26 +176,22 @@
   }
 
   function autoTrade(symbol, action) {
-    const user = document.getElementById("user").value.trim();
+    const user = document.getElementById("userId").value.trim();
     if (!user) return;
 
     fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        symbol,
-        action,
-        quantity: 1
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol, action, quantity: 1 })
     })
     .then(res => res.json())
     .then(data => {
       alert("✅ Auto trade response: " + JSON.stringify(data));
-      updateDashboard();  // Reload logs
+      loadUserData(); // Refresh logs
     })
-    .catch(err => alert("❌ Error placing order: " + err));
+    .catch(err => {
+      alert("❌ Error placing order: " + err);
+    });
   }
 
   function copyText(id) {
