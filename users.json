@@ -1,7 +1,5 @@
 {
   "ankit123": {
-    "api_key": "",
-    "secret_key": "",
     "broker": "alpaca"
   }
 }
