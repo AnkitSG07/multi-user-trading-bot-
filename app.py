@@ -115,6 +115,7 @@ def suggested_symbols(user_id):
 
     try:
         bars = api.get_bars(watchlist, timeframe="1Day", limit=2).df
+        bars = bars.reset_index()  # ✅ Fix for missing 'symbol'
 
         suggestions = []
         for symbol in watchlist:
