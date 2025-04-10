@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import alpaca_trade_api as tradeapi
 import json
 import os
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app)  # 🔥 This fixes the CORS issue
 
 # Load user credentials from users.json
 def load_users():
