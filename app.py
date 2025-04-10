@@ -112,21 +112,18 @@ def suggested_symbols(user_id):
     )
 
     watchlist = ["AAPL", "TSLA", "MSFT", "AMZN", "GOOG"]
+    suggestions = []
 
     try:
-        bars = api.get_bars(watchlist, timeframe="1Day", limit=2).df
-        suggestions = []
-
         for symbol in watchlist:
             try:
-                df = bars[bars.index.get_level_values("symbol") == symbol]
-                if len(df) < 2:
+                bars = api.get_bars(symbol, timeframe="1Day", limit=2).df
+
+                if len(bars) < 2:
                     continue
 
-                df = df.reset_index()
-
-                yesterday = df.iloc[-2]
-                today = df.iloc[-1]
+                yesterday = bars.iloc[-2]
+                today = bars.iloc[-1]
 
                 change = round(((today.close - yesterday.close) / yesterday.close) * 100, 2)
                 suggestion = "Buy" if change < -2 else "Sell" if change > 2 else "Hold"
@@ -137,6 +134,7 @@ def suggested_symbols(user_id):
                     "change_percent": change,
                     "suggestion": suggestion
                 })
+
             except Exception as e:
                 print(f"Error processing {symbol}: {e}")
                 continue
