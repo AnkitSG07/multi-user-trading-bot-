@@ -1,251 +1,194 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Trading Dashboard</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f5f7fa;
-      color: #333;
-      padding: 2rem;
-      max-width: 900px;
-      margin: auto;
-    }
-    h1 { color: #2c3e50; }
-    label { display: block; margin-top: 1rem; }
-    input, textarea {
-      width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.2rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      margin-top: 0.5rem;
-      padding: 0.4rem 1rem;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover { background-color: #0056b3; }
-    .box {
-      background-color: white;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-top: 1rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    th, td {
-      text-align: center;
-      padding: 0.5rem;
-      border-bottom: 1px solid #ddd;
-    }
-    th { background-color: #007bff; color: white; }
-    .copy-btn {
-      float: right;
-      margin-top: -2.5rem;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 0.5rem 0 0 0;
-    }
-    ul li {
-      margin: 0.4rem 0;
-    }
-  </style>
-</head>
-<body>
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import alpaca_trade_api as tradeapi
+import json
+import os
+import requests
+from datetime import datetime
 
-  <h1>🚀 Trading Bot Dashboard</h1>
+app = Flask(__name__)
+CORS(app)
 
-  <label for="userId">🔑 Enter your User ID</label>
-  <input type="text" id="userId" placeholder="e.g. ankit123" />
-  <button id="loadBtn">🔄 Load Dashboard</button>
+# Load user credentials
+def load_users():
+    with open("users.json", "r") as f:
+        return json.load(f)
 
-  <div class="box">
-    <strong>🔗 Webhook URL:</strong>
-    <button class="copy-btn" onclick="copyText('webhookUrlText')">📋 Copy</button>
-    <p id="webhookUrl">https://multi-user-trading-bot.onrender.com/webhook/</p>
-    <input type="text" id="webhookUrlText" readonly style="display:none;">
-  </div>
+# Log trade history
+def log_trade(user_id, log_data):
+    os.makedirs("logs", exist_ok=True)
+    log_file = f"logs/{user_id}.json"
+    logs = []
+    if os.path.exists(log_file):
+        with open(log_file, "r") as f:
+            logs = json.load(f)
+    logs.insert(0, log_data)
+    logs = logs[:20]
+    with open(log_file, "w") as f:
+        json.dump(logs, f, indent=2)
 
-  <div class="box">
-    <strong>📦 Sample TradingView Alert JSON:</strong>
-    <button class="copy-btn" onclick="copyText('alertJsonText')">📋 Copy</button>
-    <textarea id="alertJsonText" rows="5">{
-  "symbol": "AAPL",
-  "action": "buy",
-  "quantity": 1
-}</textarea>
-  </div>
+@app.route("/")
+def home():
+    return "🚀 Trading Platform API is running."
 
-  <div class="box">
-    <strong>💼 Account Summary:</strong>
-    <ul id="summary-list">
-      <li>💵 Cash: <span id="cash">--</span></li>
-      <li>📈 Market Value: <span id="market_value">--</span></li>
-      <li>💰 Total Equity: <span id="equity">--</span></li>
-      <li>📊 Unrealized P/L: <span id="pnl">--</span></li>
-    </ul>
-  </div>
+@app.route("/webhook/<user_id>", methods=["POST"])
+def webhook(user_id):
+    users = load_users()
+    if user_id not in users:
+        return jsonify({"status": "error", "message": "Invalid user"}), 404
 
-  <div class="box">
-    <strong>📊 Recent Trades:</strong>
-    <table id="trade-table">
-      <thead>
-        <tr>
-          <th>Time</th>
-          <th>Symbol</th>
-          <th>Action</th>
-          <th>Qty</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="log-body">
-        <tr><td colspan="5">Enter a user ID to load trades</td></tr>
-      </tbody>
-    </table>
-  </div>
+    user = users[user_id]
+    data = request.get_json()
+    print(f"📩 [{user_id}] Webhook received:", data)
 
-  <div class="box">
-    <strong>🔥 Suggested Trades (via Alpaca)</strong>
-    <table id="suggested-table">
-      <thead>
-        <tr>
-          <th>Symbol</th>
-          <th>Price</th>
-          <th>Change%</th>
-          <th>Suggestion</th>
-          <th>Auto Trade</th>
-        </tr>
-      </thead>
-      <tbody id="suggested-body">
-        <tr><td colspan="5">Enter User ID to load suggestions</td></tr>
-      </tbody>
-    </table>
-  </div>
+    symbol = data.get("symbol")
+    action = data.get("action")
+    quantity = int(data.get("quantity", 1))
+    if not symbol or not action:
+        return jsonify({"status": "error", "message": "Missing data"}), 400
 
-<script>
-  document.getElementById("loadBtn").addEventListener("click", loadUserData);
-  document.getElementById("userId").addEventListener("keydown", function (e) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      loadUserData();
-    }
-  });
+    try:
+        api = tradeapi.REST(
+            key_id=user["api_key"],
+            secret_key=user["secret_key"],
+            base_url="https://paper-api.alpaca.markets"
+        )
 
-  function loadUserData() {
-    const user = document.getElementById("userId").value.trim();
-    if (!user) return alert("Please enter a valid User ID");
+        # ❌ Prevent wash trade (if trying to sell without holding)
+        if action.lower() == "sell":
+            try:
+                position = api.get_position(symbol)
+                held_qty = int(float(position.qty_available))
+            except:
+                held_qty = 0
 
-    const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
-    document.getElementById("webhookUrl").innerText = webhookUrl;
-    document.getElementById("webhookUrlText").value = webhookUrl;
+            if held_qty < quantity:
+                msg = f"❌ Not enough quantity to sell: You have {held_qty}, trying to sell {quantity}."
+                print(f"[{user_id}] {msg}")
+                return jsonify({"status": "error", "message": msg}), 400
 
-    // Load portfolio summary
-    fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === "success") {
-          document.getElementById("cash").innerText = `$${data.cash}`;
-          document.getElementById("market_value").innerText = `$${data.market_value}`;
-          document.getElementById("equity").innerText = `$${data.equity}`;
-          document.getElementById("pnl").innerText = `$${data.pnl}`;
-        } else {
-          document.getElementById("summary-list").innerHTML = `<li>⚠️ Unable to load portfolio</li>`;
-        }
-      })
-      .catch(err => {
-        console.error("❌ Error loading portfolio:", err);
-        document.getElementById("summary-list").innerHTML = `<li>⚠️ Error loading portfolio</li>`;
-      });
+        # ✅ Submit the order
+        order = api.submit_order(
+            symbol=symbol,
+            qty=quantity,
+            side=action.lower(),
+            type="market",
+            time_in_force="gtc"
+        )
 
-    // Fetch logs
-    fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
-      .then(res => res.json())
-      .then(logs => {
-        const tbody = document.getElementById("log-body");
-        tbody.innerHTML = "";
-        if (!Array.isArray(logs) || logs.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5">No recent trades.</td></tr>`;
-        } else {
-          logs.forEach(log => {
-            tbody.innerHTML += `
-              <tr>
-                <td>${log.timestamp}</td>
-                <td>${log.symbol}</td>
-                <td>${log.action}</td>
-                <td>${log.quantity}</td>
-                <td>${log.status}</td>
-              </tr>`;
-          });
-        }
-      });
+        print(f"✅ [{user_id}] Order placed: {symbol} {action.upper()} x{quantity}")
+        log_trade(user_id, {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "symbol": symbol,
+            "action": action.capitalize(),
+            "quantity": quantity,
+            "status": "✅"
+        })
+        return jsonify({"status": "success", "order_id": order.id}), 200
 
-    // Fetch suggestions
-    fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
-      .then(res => res.json())
-      .then(suggestions => {
-        const tbody = document.getElementById("suggested-body");
-        tbody.innerHTML = "";
+    except Exception as e:
+        print(f"❌ [{user_id}] Order failed:", str(e))
+        log_trade(user_id, {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "symbol": symbol,
+            "action": action.capitalize(),
+            "quantity": quantity,
+            "status": "❌"
+        })
+        return jsonify({"status": "error", "message": str(e)}), 500
 
-        if (!Array.isArray(suggestions)) {
-          const msg = suggestions.message || "No suggestions available.";
-          tbody.innerHTML = `<tr><td colspan="5">⚠️ ${msg}</td></tr>`;
-          return;
-        }
+@app.route("/logs/<user_id>", methods=["GET"])
+def get_logs(user_id):
+    log_file = f"logs/{user_id}.json"
+    if os.path.exists(log_file):
+        with open(log_file, "r") as f:
+            return jsonify(json.load(f))
+    return jsonify([])
 
-        suggestions.forEach(item => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${item.symbol}</td>
-              <td>$${item.current_price}</td>
-              <td>${item.change_percent}%</td>
-              <td>${item.suggestion}</td>
-              <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
-            </tr>`;
-        });
-      })
-      .catch(err => {
-        console.error("❌ Error fetching suggestions:", err);
-        document.getElementById("suggested-body").innerHTML = `<tr><td colspan="5">Failed to fetch suggestions.</td></tr>`;
-      });
-  }
+@app.route("/portfolio/<user_id>", methods=["GET"])
+def get_portfolio(user_id):
+    users = load_users()
+    if user_id not in users:
+        return jsonify({"status": "error", "message": "Invalid user"}), 404
 
-  function autoTrade(symbol, action) {
-    const user = document.getElementById("userId").value.trim();
-    if (!user) return;
+    user = users[user_id]
+    try:
+        api = tradeapi.REST(
+            key_id=user["api_key"],
+            secret_key=user["secret_key"],
+            base_url="https://paper-api.alpaca.markets"
+        )
 
-    fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ symbol, action, quantity: 1 })
-    })
-    .then(res => res.json())
-    .then(data => {
-      alert("✅ Auto trade response: " + JSON.stringify(data));
-      loadUserData();
-    })
-    .catch(err => {
-      alert("❌ Error placing order: " + err);
-    });
-  }
+        account = api.get_account()
+        positions = api.list_positions()
 
-  function copyText(id) {
-    const text = document.getElementById(id).innerText || document.getElementById(id).value;
-    navigator.clipboard.writeText(text);
-    alert("📋 Copied to clipboard!");
-  }
-</script>
-</body>
-</html>
+        cash = float(account.cash)
+        equity = float(account.equity)
+        market_value = float(account.market_value)
+        pnl = equity - cash
+
+        return jsonify({
+            "cash": round(cash, 2),
+            "equity": round(equity, 2),
+            "market_value": round(market_value, 2),
+            "pnl": round(pnl, 2),
+            "status": "success"
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/suggested/<user_id>", methods=["GET"])
+def suggested_symbols(user_id):
+    users = load_users()
+    if user_id not in users:
+        return jsonify({"status": "error", "message": "Invalid user"}), 404
+
+    TD_API_KEY = "732be95d470647be80419085887d2606"
+    user = users[user_id]
+
+    try:
+        api = tradeapi.REST(
+            key_id=user["api_key"],
+            secret_key=user["secret_key"],
+            base_url="https://paper-api.alpaca.markets"
+        )
+        assets = api.list_assets(status='active')
+        symbols = [a.symbol for a in assets if a.tradable and a.exchange in ["NASDAQ", "NYSE"]]
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Failed to fetch Alpaca symbols: {e}"}), 500
+
+    suggestions = []
+    for symbol in symbols[:50]:  # Can increase to more if needed
+        try:
+            url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&outputsize=2&apikey={TD_API_KEY}"
+            res = requests.get(url)
+            data = res.json()
+
+            if "values" not in data or len(data["values"]) < 2:
+                continue
+
+            today = float(data["values"][0]["close"])
+            yesterday = float(data["values"][1]["close"])
+            change = round(((today - yesterday) / yesterday) * 100, 2)
+          
+            suggestion = "Buy" if change < -1.5 else "Sell" if change > 1.5 else "Hold"
+
+
+            suggestions.append({
+                "symbol": symbol,
+                "current_price": today,
+                "change_percent": change,
+                "suggestion": suggestion
+            })
+        except Exception as e:
+            print(f"❌ Error processing {symbol}: {e}")
+            continue
+
+    top5 = sorted(suggestions, key=lambda x: abs(x["change_percent"]), reverse=True)[:5]
+    return jsonify(top5), 200
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
