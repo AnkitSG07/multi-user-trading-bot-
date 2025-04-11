@@ -132,7 +132,7 @@
       .then(logs => {
         const tbody = document.getElementById("log-body");
         tbody.innerHTML = "";
-        if (logs.length === 0) {
+        if (!Array.isArray(logs) || logs.length === 0) {
           tbody.innerHTML = `<tr><td colspan="5">No recent trades.</td></tr>`;
         } else {
           logs.forEach(log => {
@@ -154,6 +154,13 @@
       .then(suggestions => {
         const tbody = document.getElementById("suggested-body");
         tbody.innerHTML = "";
+
+        if (!Array.isArray(suggestions)) {
+          const msg = suggestions.message || "No suggestions available.";
+          tbody.innerHTML = `<tr><td colspan="5">⚠️ ${msg}</td></tr>`;
+          return;
+        }
+
         if (suggestions.length === 0) {
           tbody.innerHTML = `<tr><td colspan="5">No suggestions at the moment.</td></tr>`;
         } else {
@@ -171,7 +178,7 @@
       })
       .catch(err => {
         console.error("❌ Error fetching suggestions:", err);
-        document.getElementById("suggested-body").innerHTML = `<tr><td colspan="5">Failed to fetch suggestions.</td></tr>`;
+        document.getElementById("suggested-body").innerHTML = `<tr><td colspan="5">❌ Failed to fetch suggestions.</td></tr>`;
       });
   }
 
