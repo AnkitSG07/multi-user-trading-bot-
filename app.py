@@ -154,7 +154,7 @@ def suggested_symbols(user_id):
             base_url="https://paper-api.alpaca.markets"
         )
         assets = api.list_assets(status='active')
-        symbols = [a.symbol for a in assets if a.tradable and a.exchange in ["NASDAQ", "NYSE"]]
+        symbols = ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]  # Use this instead of top 50 for now
     except Exception as e:
         return jsonify({"status": "error", "message": f"Failed to fetch Alpaca symbols: {e}"}), 500
 
