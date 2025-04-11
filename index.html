@@ -54,6 +54,14 @@
       float: right;
       margin-top: -2.5rem;
     }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0.5rem 0 0 0;
+    }
+    ul li {
+      margin: 0.4rem 0;
+    }
   </style>
 </head>
 <body>
@@ -79,6 +87,16 @@
   "action": "buy",
   "quantity": 1
 }</textarea>
+  </div>
+
+  <div class="box">
+    <strong>💼 Account Summary:</strong>
+    <ul id="summary-list">
+      <li>💵 Cash: <span id="cash">--</span></li>
+      <li>📈 Market Value: <span id="market_value">--</span></li>
+      <li>💰 Total Equity: <span id="equity">--</span></li>
+      <li>📊 Unrealized P/L: <span id="pnl">--</span></li>
+    </ul>
   </div>
 
   <div class="box">
@@ -118,7 +136,6 @@
   </div>
 
 <script>
-  // Trigger on button or Enter key
   document.getElementById("loadBtn").addEventListener("click", loadUserData);
   document.getElementById("userId").addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
@@ -131,10 +148,27 @@
     const user = document.getElementById("userId").value.trim();
     if (!user) return alert("Please enter a valid User ID");
 
-    // Webhook update
     const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
     document.getElementById("webhookUrl").innerText = webhookUrl;
     document.getElementById("webhookUrlText").value = webhookUrl;
+
+    // Load portfolio summary
+    fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          document.getElementById("cash").innerText = `$${data.cash}`;
+          document.getElementById("market_value").innerText = `$${data.market_value}`;
+          document.getElementById("equity").innerText = `$${data.equity}`;
+          document.getElementById("pnl").innerText = `$${data.pnl}`;
+        } else {
+          document.getElementById("summary-list").innerHTML = `<li>⚠️ Unable to load portfolio</li>`;
+        }
+      })
+      .catch(err => {
+        console.error("❌ Error loading portfolio:", err);
+        document.getElementById("summary-list").innerHTML = `<li>⚠️ Error loading portfolio</li>`;
+      });
 
     // Fetch logs
     fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
@@ -200,7 +234,7 @@
     .then(res => res.json())
     .then(data => {
       alert("✅ Auto trade response: " + JSON.stringify(data));
-      loadUserData(); // Refresh logs
+      loadUserData();
     })
     .catch(err => {
       alert("❌ Error placing order: " + err);
