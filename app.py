@@ -104,6 +104,40 @@ def get_logs(user_id):
         with open(log_file, "r") as f:
             return jsonify(json.load(f))
     return jsonify([])
+    
+@app.route("/portfolio/<user_id>", methods=["GET"])
+def get_portfolio(user_id):
+    users = load_users()
+    if user_id not in users:
+        return jsonify({"status": "error", "message": "Invalid user"}), 404
+
+    user = users[user_id]
+    try:
+        api = tradeapi.REST(
+            key_id=user["api_key"],
+            secret_key=user["secret_key"],
+            base_url="https://paper-api.alpaca.markets"
+        )
+
+        account = api.get_account()
+        positions = api.list_positions()
+
+        cash = float(account.cash)
+        equity = float(account.equity)
+        market_value = float(account.market_value)
+        pnl = equity - cash
+
+        return jsonify({
+            "cash": round(cash, 2),
+            "equity": round(equity, 2),
+            "market_value": round(market_value, 2),
+            "pnl": round(pnl, 2),
+            "status": "success"
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route("/suggested/<user_id>", methods=["GET"])
 def suggested_symbols(user_id):
