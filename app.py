@@ -124,8 +124,8 @@ def get_portfolio(user_id):
 
         cash = float(account.cash)
         equity = float(account.equity)
-        market_value = float(account.market_value)
-        pnl = equity - cash
+        market_value = sum([float(p.market_value) for p in positions])
+        pnl = equity - cash  # OR use market_value directly if preferred
 
         return jsonify({
             "cash": round(cash, 2),
@@ -137,7 +137,6 @@ def get_portfolio(user_id):
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 @app.route("/suggested/<user_id>", methods=["GET"])
 def suggested_symbols(user_id):
