@@ -138,8 +138,8 @@ def suggested_symbols(user_id):
             today = float(data["values"][0]["close"])
             yesterday = float(data["values"][1]["close"])
             change = round(((today - yesterday) / yesterday) * 100, 2)
-
-            suggestion = "Buy" if change < -2 else "Sell" if change > 2 else "Hold"
+            
+            suggestion = "Buy" if change < -1.5 else "Sell" if change > 1.5 else "Hold"
 
             suggestions.append({
                 "symbol": symbol,
