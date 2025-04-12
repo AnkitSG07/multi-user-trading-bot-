@@ -157,6 +157,13 @@
     <iframe id="chart-frame" src="https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:AAPL&interval=D&theme=light" loading="lazy"></iframe>
   </div>
 
+  <div class="box">
+    <strong>📉 PnL Chart (Daily)</strong>
+    <canvas id="pnlChart"></canvas>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
   document.getElementById("loadBtn").addEventListener("click", loadUserData);
   document.getElementById("userId").addEventListener("keydown", function (e) {
@@ -233,8 +240,37 @@
           ul.innerHTML += `<li>${sym} <button onclick="removeFromWatchlist('${sym}')">❌</button></li>`;
         });
       });
+    loadPnlChart(user);
   }
 
+  function loadPnlChart(user) {
+  fetch(`https://multi-user-trading-bot.onrender.com/pnl/${user}`)
+    .then(res => res.json())
+    .then(pnl => {
+      const ctx = document.getElementById("pnlChart").getContext("2d");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: pnl.labels,
+          datasets: [{
+            label: "PnL Over Time",
+            data: pnl.data,
+            borderColor: "#28a745",
+            backgroundColor: "rgba(40, 167, 69, 0.1)",
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    });
+}
   function autoTrade(symbol, action) {
     const user = document.getElementById("userId").value.trim();
     if (!user) return;
