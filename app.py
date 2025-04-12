@@ -252,29 +252,14 @@ def get_pnl_chart(user_id):
 
         pnl_by_day = {}
         for log in logs:
+            if log.get("status") != "✅":
+                continue
+
             date = log["timestamp"].split()[0]
-            action = log.get("action", "").lower()
             qty = int(log.get("quantity", 1))
-            symbol = log.get("symbol", "AAPL")
-            status = log.get("status", "")
-
-            if status != "✅":
-                continue  # only successful trades
-
-            # Fetch price from Alpaca
-            try:
-                alpaca = tradeapi.REST(
-                    key_id=os.environ.get("ALPACA_API_KEY"),
-                    secret_key=os.environ.get("ALPACA_SECRET_KEY"),
-                    base_url="https://paper-api.alpaca.markets"
-                )
-                latest = alpaca.get_latest_trade(symbol)
-                price = float(latest.price)
-            except:
-                price = 100  # fallback value
-
+            price = float(log.get("price", 0.0))  # Use stored trade price
             pnl = price * qty
-            if action == "buy":
+            if log.get("action", "").lower() == "buy":
                 pnl *= -1
 
             pnl_by_day[date] = pnl_by_day.get(date, 0) + pnl
@@ -284,7 +269,6 @@ def get_pnl_chart(user_id):
         return jsonify({"labels": labels, "data": data})
     except Exception as e:
         return jsonify({"labels": [], "data": [], "error": str(e)})
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
