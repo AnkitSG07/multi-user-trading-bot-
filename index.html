@@ -65,33 +65,43 @@
   </style>
 </head>
 <body>
-  
-  <div class="box" style="display: flex; justify-content: space-around;">
-    <button onclick="showTab('login')">🔑 Login</button>
-    button onclick="showTab('signup')">📝 Signup</button>
-  </div>
-  <div class="box" id="signup-box" style="display: none;">
-    <h3>📝 Sign Up</h3>
-    <label for="newUserId">Choose User ID:</label>
-    <input type="text" id="newUserId" placeholder="e.g. john_doe" />
-    <label for="newApiKey">Alpaca API Key:</label>
-    <input type="text" id="newApiKey" placeholder="Enter API Key" />
-    <label for="newSecretKey">Alpaca Secret Key:</label>
-    <input type="text" id="newSecretKey" placeholder="Enter Secret Key" />
-    <button onclick="signUp()">🚀 Sign Up</button>
-  </div>
-  <div class="box" id="login-box">
-    <h3>🔑 Trading Bot Dashboard</h3>
-    <label for="userId">🔍 Enter your User ID</label>
-    <input type="text" id="userId" placeholder="e.g. ankit123" />
-    <button id="loadBtn">📥 Load Dashboard</button>
-  </div>
+  <body>
 
-  <h1>🚀 Trading Bot Dashboard</h1>
-
+<!-- 🔐 Login Page -->
+<div class="box" id="login-box">
+  <h3>🔐 Trading Bot Login</h3>
   <label for="userId">🔑 Enter your User ID</label>
   <input type="text" id="userId" placeholder="e.g. ankit123" />
-  <button id="loadBtn">🔄 Load Dashboard</button>
+  <button onclick="login()">📥 Load Dashboard</button>
+</div>
+
+<!-- 🧾 Signup Page -->
+<div class="box" id="signup-box" style="display: none;">
+  <h3>📝 Sign Up</h3>
+  <label for="newUserId">Choose User ID:</label>
+  <input type="text" id="newUserId" placeholder="e.g. john_doe" />
+
+  <label for="newApiKey">Alpaca API Key:</label>
+  <input type="text" id="newApiKey" placeholder="Enter API Key" />
+
+  <label for="newSecretKey">Alpaca Secret Key:</label>
+  <input type="text" id="newSecretKey" placeholder="Enter Secret Key" />
+
+  <button onclick="signUp()">🚀 Sign Up</button>
+</div>
+
+<!-- 🌐 Tab Switcher -->
+<div class="box" style="display: flex; justify-content: space-around;">
+  <button onclick="showTab('login')">🔑 Login</button>
+  <button onclick="showTab('signup')">📝 Signup</button>
+</div>
+
+<!-- 📊 Dashboard (hidden until login) -->
+<div id="dashboard-page" style="display: none;">
+  <!-- your full dashboard content from line 94 onward should go here -->
+</div>
+
+  <h1>🚀 Trading Bot Dashboard</h1>
 
   <div class="box">
     <label for="strategy">📊 Select Strategy:</label>
