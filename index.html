@@ -421,7 +421,21 @@ function signUp() {
 
 showTab("login"); // default view
 
+function login() {
+    const user = document.getElementById("userId").value.trim();
+    if (!user) {
+      showPopup("❌ Please enter a valid User ID.", false);
+      return;
+    }
 
+    // Hide login/signup and show dashboard
+    document.getElementById("login-box").style.display = "none";
+    document.getElementById("signup-box").style.display = "none";
+    document.getElementById("dashboard-page").style.display = "block";
+
+    // Load dashboard data
+    loadUserData();
+  }
   
 </script>
 <div id="popup" style="
