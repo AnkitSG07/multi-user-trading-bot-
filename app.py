@@ -64,17 +64,20 @@ def webhook(user_id):
             base_url="https://paper-api.alpaca.markets"
         )
 
+        # ❌ Prevent wash trade
         if action.lower() == "sell":
             try:
                 position = api.get_position(symbol)
                 held_qty = int(float(position.qty_available))
             except:
                 held_qty = 0
+
             if held_qty < quantity:
                 msg = f"❌ Not enough quantity to sell: You have {held_qty}, trying to sell {quantity}."
                 print(f"[{user_id}] {msg}")
                 return jsonify({"status": "error", "message": msg}), 400
 
+        # ✅ Submit the order
         order = api.submit_order(
             symbol=symbol,
             qty=quantity,
@@ -83,19 +86,8 @@ def webhook(user_id):
             time_in_force="gtc"
         )
 
-        print(f"✅ [{user_id}] Order placed: {symbol} {action.upper()} x{quantity}")
-        log_trade(user_id, {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "symbol": symbol,
-            "action": action.capitalize(),
-            "quantity": quantity,
-            price = float(order.filled_avg_price) if order.filled_avg_price is not None else 0.0,
-            "status": "✅"
-        })
-        return jsonify({"status": "success", "order_id": order.id}), 200
-
-    except Exception as e:
-        print(f"❌ [{user_id}] Order failed:", str(e))
+        # ✅ Log successful trade
+        price = float(order.filled_avg_price) if order.filled_avg_price else 0.0
         log_trade(user_id, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
@@ -104,7 +96,34 @@ def webhook(user_id):
             "status": "✅",
             "price": price
         })
-        return jsonify({"status": "error", "message": str(e)}), 500
+
+        print(f"✅ [{user_id}] Order placed: {symbol} {action.upper()} x{quantity}")
+        return jsonify({"status": "success", "order_id": order.id}), 200
+
+    except Exception as e:
+        error_message = str(e)
+
+        # ❌ Log failed trade
+        log_trade(user_id, {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "symbol": symbol,
+            "action": action.capitalize(),
+            "quantity": quantity,
+            "status": "❌"
+        })
+
+        # 🎯 User-friendly messages
+        if "float()" in error_message and "NoneType" in error_message:
+            error_message = "Trade failed: Price information is not available yet. Please try again in a few seconds."
+        elif "qty" in error_message.lower():
+            error_message = "Trade failed: Invalid quantity or not enough holdings to sell."
+        elif "symbol" in error_message.lower():
+            error_message = "Trade failed: Invalid or unsupported stock symbol."
+        else:
+            error_message = "Trade failed due to an unexpected issue. Please try again."
+
+        print(f"❌ [{user_id}] Order failed:", error_message)
+        return jsonify({"status": "error", "message": error_message}), 500
 
 @app.route("/logs/<user_id>", methods=["GET"])
 def get_logs(user_id):
