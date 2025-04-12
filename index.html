@@ -54,14 +54,8 @@
       float: right;
       margin-top: -2.5rem;
     }
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 0.5rem 0 0 0;
-    }
-    ul li {
-      margin: 0.4rem 0;
-    }
+    ul { list-style: none; padding: 0; margin: 0.5rem 0 0 0; }
+    ul li { margin: 0.4rem 0; }
   </style>
 </head>
 <body>
@@ -70,16 +64,17 @@
 
   <label for="userId">🔑 Enter your User ID</label>
   <input type="text" id="userId" placeholder="e.g. ankit123" />
-
-  <label for="strategy">🧠 Select Strategy</label>
-  <select id="strategy">
-    <option value="balanced">Balanced</option>
-    <option value="momentum">Momentum</option>
-    <option value="reversal">Reversal</option>
-    <option value="volume">Volume Spike</option>
-  </select>
-
   <button id="loadBtn">🔄 Load Dashboard</button>
+
+  <div class="box">
+    <label for="strategy">📊 Select Strategy:</label>
+    <select id="strategy" onchange="updateStrategy()">
+      <option value="balanced">Balanced</option>
+      <option value="momentum">Momentum</option>
+      <option value="reversal">Reversal</option>
+      <option value="volume_spike">Volume Spike</option>
+    </select>
+  </div>
 
   <div class="box">
     <strong>🔗 Webhook URL:</strong>
@@ -155,12 +150,20 @@
 
   function loadUserData() {
     const user = document.getElementById("userId").value.trim();
-    const strategy = document.getElementById("strategy").value;
     if (!user) return alert("Please enter a valid User ID");
 
     const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
     document.getElementById("webhookUrl").innerText = webhookUrl;
     document.getElementById("webhookUrlText").value = webhookUrl;
+
+    // Load strategy
+    fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.strategy) {
+          document.getElementById("strategy").value = data.strategy;
+        }
+      });
 
     // Load portfolio summary
     fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
@@ -174,9 +177,6 @@
         } else {
           document.getElementById("summary-list").innerHTML = `<li>⚠️ Unable to load portfolio</li>`;
         }
-      })
-      .catch(() => {
-        document.getElementById("summary-list").innerHTML = `<li>⚠️ Error loading portfolio</li>`;
       });
 
     // Fetch logs
@@ -202,11 +202,12 @@
       });
 
     // Fetch suggestions
-    fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}?strategy=${strategy}`)
+    fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
       .then(res => res.json())
       .then(suggestions => {
         const tbody = document.getElementById("suggested-body");
         tbody.innerHTML = "";
+
         if (!Array.isArray(suggestions)) {
           const msg = suggestions.message || "No suggestions available.";
           tbody.innerHTML = `<tr><td colspan="5">⚠️ ${msg}</td></tr>`;
@@ -223,9 +224,6 @@
               <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
             </tr>`;
         });
-      })
-      .catch(() => {
-        document.getElementById("suggested-body").innerHTML = `<tr><td colspan="5">Failed to fetch suggestions.</td></tr>`;
       });
   }
 
@@ -245,6 +243,23 @@
     })
     .catch(err => {
       alert("❌ Error placing order: " + err);
+    });
+  }
+
+  function updateStrategy() {
+    const user = document.getElementById("userId").value.trim();
+    const strategy = document.getElementById("strategy").value;
+    if (!user) return;
+
+    fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ strategy })
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert(`✅ Strategy updated to ${strategy}`);
+      loadUserData();
     });
   }
 
