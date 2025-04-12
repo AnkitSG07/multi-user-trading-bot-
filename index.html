@@ -15,7 +15,7 @@
     }
     h1 { color: #2c3e50; }
     label { display: block; margin-top: 1rem; }
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       padding: 0.5rem;
       margin-top: 0.2rem;
@@ -54,13 +54,13 @@
       float: right;
       margin-top: -2.5rem;
     }
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 0.5rem 0 0 0;
-    }
-    ul li {
-      margin: 0.4rem 0;
+    ul { list-style: none; padding: 0; margin: 0.5rem 0 0 0; }
+    ul li { margin: 0.4rem 0; }
+    iframe {
+      width: 100%;
+      height: 300px;
+      border: none;
+      margin-top: 1rem;
     }
   </style>
 </head>
@@ -71,6 +71,16 @@
   <label for="userId">🔑 Enter your User ID</label>
   <input type="text" id="userId" placeholder="e.g. ankit123" />
   <button id="loadBtn">🔄 Load Dashboard</button>
+
+  <div class="box">
+    <label for="strategy">📊 Select Strategy:</label>
+    <select id="strategy" onchange="updateStrategy()">
+      <option value="balanced">Balanced</option>
+      <option value="momentum">Momentum</option>
+      <option value="reversal">Reversal</option>
+      <option value="volume_spike">Volume Spike</option>
+    </select>
+  </div>
 
   <div class="box">
     <strong>🔗 Webhook URL:</strong>
@@ -136,154 +146,150 @@
   </div>
 
   <div class="box">
-    <strong>📉 Live Chart</strong>
-    <div id="tv-chart" style="height:400px;"></div>
+    <strong>📈 Live Chart (by TradingView)</strong>
+    <iframe id="chart-frame" src="https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:AAPL&interval=D&theme=light" loading="lazy"></iframe>
   </div>
 
-  <script src="https://s3.tradingview.com/tv.js"></script>
-  <script>
-    document.getElementById("loadBtn").addEventListener("click", loadUserData);
-    document.getElementById("userId").addEventListener("keydown", function (e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        loadUserData();
-      }
-    });
-
-    function loadUserData() {
-      const user = document.getElementById("userId").value.trim();
-      if (!user) return alert("Please enter a valid User ID");
-
-      const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
-      document.getElementById("webhookUrl").innerText = webhookUrl;
-      document.getElementById("webhookUrlText").value = webhookUrl;
-
-      // Load portfolio summary
-      fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === "success") {
-            document.getElementById("cash").innerText = `$${data.cash}`;
-            document.getElementById("market_value").innerText = `$${data.market_value}`;
-            document.getElementById("equity").innerText = `$${data.equity}`;
-            document.getElementById("pnl").innerText = `$${data.pnl}`;
-          } else {
-            document.getElementById("summary-list").innerHTML = `<li>⚠️ Unable to load portfolio</li>`;
-          }
-        })
-        .catch(err => {
-          console.error("❌ Error loading portfolio:", err);
-          document.getElementById("summary-list").innerHTML = `<li>⚠️ Error loading portfolio</li>`;
-        });
-
-      // Fetch logs
-      fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
-        .then(res => res.json())
-        .then(logs => {
-          const tbody = document.getElementById("log-body");
-          tbody.innerHTML = "";
-          if (!Array.isArray(logs) || logs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5">No recent trades.</td></tr>`;
-          } else {
-            logs.forEach(log => {
-              tbody.innerHTML += `
-                <tr>
-                  <td>${log.timestamp}</td>
-                  <td>${log.symbol}</td>
-                  <td>${log.action}</td>
-                  <td>${log.quantity}</td>
-                  <td>${log.status}</td>
-                </tr>`;
-            });
-          }
-        });
-
-      // Fetch suggestions
-      fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
-        .then(res => res.json())
-        .then(suggestions => {
-          const tbody = document.getElementById("suggested-body");
-          tbody.innerHTML = "";
-
-          if (!Array.isArray(suggestions)) {
-            const msg = suggestions.message || "No suggestions available.";
-            tbody.innerHTML = `<tr><td colspan="5">⚠️ ${msg}</td></tr>`;
-            return;
-          }
-
-          suggestions.forEach(item => {
-            tbody.innerHTML += `
-              <tr>
-                <td>${item.symbol}</td>
-                <td>$${item.current_price}</td>
-                <td>${item.change_percent}%</td>
-                <td>${item.suggestion}</td>
-                <td>
-                  <button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button>
-                </td>
-              </tr>`;
-          });
-
-          // Show chart for first suggested symbol
-          if (suggestions.length > 0) {
-            showChart(suggestions[0].symbol);
-          }
-        })
-        .catch(err => {
-          console.error("❌ Error fetching suggestions:", err);
-          document.getElementById("suggested-body").innerHTML = `<tr><td colspan="5">Failed to fetch suggestions.</td></tr>`;
-        });
+<script>
+  document.getElementById("loadBtn").addEventListener("click", loadUserData);
+  document.getElementById("userId").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      loadUserData();
     }
+  });
 
-    function autoTrade(symbol, action) {
-      const user = document.getElementById("userId").value.trim();
-      if (!user) return;
+  function loadUserData() {
+    const user = document.getElementById("userId").value.trim();
+    if (!user) return alert("Please enter a valid User ID");
 
-      showChart(symbol); // Show chart on click
+    const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
+    document.getElementById("webhookUrl").innerText = webhookUrl;
+    document.getElementById("webhookUrlText").value = webhookUrl;
 
-      fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol, action, quantity: 1 })
-      })
+    // Load strategy
+    fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`)
       .then(res => res.json())
       .then(data => {
-        alert("✅ Auto trade response: " + JSON.stringify(data));
-        loadUserData();
-      })
-      .catch(err => {
-        alert("❌ Error placing order: " + err);
+        if (data.strategy) {
+          document.getElementById("strategy").value = data.strategy;
+        }
       });
-    }
 
-    function showChart(symbol) {
-      document.getElementById("tv-chart").innerHTML = "";
-      new TradingView.widget({
-        "container_id": "tv-chart",
-        "width": "100%",
-        "height": 400,
-        "symbol": `NASDAQ:${symbol}`,
-        "interval": "D",
-        "timezone": "Etc/UTC",
-        "theme": "light",
-        "style": "1",
-        "locale": "en",
-        "toolbar_bg": "#f1f3f6",
-        "hide_top_toolbar": true,
-        "hide_legend": true,
-        "save_image": false,
-        "studies": ["MACD@tv-basicstudies"],
-        "withdateranges": true,
-        "hide_side_toolbar": false,
-        "allow_symbol_change": true,
+    // Load portfolio summary
+    fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          document.getElementById("cash").innerText = `$${data.cash}`;
+          document.getElementById("market_value").innerText = `$${data.market_value}`;
+          document.getElementById("equity").innerText = `$${data.equity}`;
+          document.getElementById("pnl").innerText = `$${data.pnl}`;
+        } else {
+          document.getElementById("summary-list").innerHTML = `<li>⚠️ Unable to load portfolio</li>`;
+        }
       });
-    }
 
-    function copyText(id) {
-      const text = document.getElementById(id).innerText || document.getElementById(id).value;
-      navigator.clipboard.writeText(text);
-      alert("📋 Copied to clipboard!");
-    }
-  </script>
+    // Fetch logs
+    fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
+      .then(res => res.json())
+      .then(logs => {
+        const tbody = document.getElementById("log-body");
+        tbody.innerHTML = "";
+        if (!Array.isArray(logs) || logs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5">No recent trades.</td></tr>`;
+        } else {
+          logs.forEach(log => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${log.timestamp}</td>
+                <td>${log.symbol}</td>
+                <td>${log.action}</td>
+                <td>${log.quantity}</td>
+                <td>${log.status}</td>
+              </tr>`;
+          });
+        }
+      });
+
+    // Fetch suggestions
+    fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
+      .then(res => res.json())
+      .then(suggestions => {
+        const tbody = document.getElementById("suggested-body");
+        tbody.innerHTML = "";
+
+        if (!Array.isArray(suggestions)) {
+          const msg = suggestions.message || "No suggestions available.";
+          tbody.innerHTML = `<tr><td colspan="5">⚠️ ${msg}</td></tr>`;
+          return;
+        }
+
+        suggestions.forEach(item => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${item.symbol}</td>
+              <td>$${item.current_price}</td>
+              <td>${item.change_percent}%</td>
+              <td>${item.suggestion}</td>
+              <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
+            </tr>`;
+        });
+
+        // Load chart of top symbol
+        if (suggestions.length > 0) {
+          updateChart(suggestions[0].symbol);
+        }
+      });
+  }
+
+  function autoTrade(symbol, action) {
+    const user = document.getElementById("userId").value.trim();
+    if (!user) return;
+
+    fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol, action, quantity: 1 })
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert("✅ Auto trade response: " + JSON.stringify(data));
+      updateChart(symbol);
+      loadUserData();
+    })
+    .catch(err => {
+      alert("❌ Error placing order: " + err);
+    });
+  }
+
+  function updateStrategy() {
+    const user = document.getElementById("userId").value.trim();
+    const strategy = document.getElementById("strategy").value;
+    if (!user) return;
+
+    fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ strategy })
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert(`✅ Strategy updated to ${strategy}`);
+      loadUserData();
+    });
+  }
+
+  function updateChart(symbol) {
+    const frame = document.getElementById("chart-frame");
+    frame.src = `https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:${symbol}&interval=D&theme=light`;
+  }
+
+  function copyText(id) {
+    const text = document.getElementById(id).innerText || document.getElementById(id).value;
+    navigator.clipboard.writeText(text);
+    alert("📋 Copied to clipboard!");
+  }
+</script>
 </body>
 </html>
