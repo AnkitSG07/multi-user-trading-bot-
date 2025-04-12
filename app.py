@@ -290,6 +290,40 @@ def get_pnl_chart(user_id):
     except Exception as e:
         return jsonify({"labels": [], "data": [], "error": str(e)})
 
+@app.route("/signup", methods=["POST"])
+def signup():
+    try:
+        data = request.get_json()
+        user_id = data.get("user_id", "").strip()
+        api_key = data.get("api_key", "").strip()
+        secret_key = data.get("secret_key", "").strip()
+
+        if not user_id or not api_key or not secret_key:
+            return jsonify({"status": "error", "message": "All fields are required"}), 400
+
+        users = {}
+        if os.path.exists("users.json"):
+            with open("users.json", "r") as f:
+                users = json.load(f)
+
+        if user_id in users:
+            return jsonify({"status": "error", "message": "User ID already exists"}), 409
+
+        users[user_id] = {
+            "api_key": api_key,
+            "secret_key": secret_key,
+            "strategy": "balanced",
+            "watchlist": []
+        }
+
+        with open("users.json", "w") as f:
+            json.dump(users, f, indent=2)
+
+        return jsonify({"status": "success", "message": "Signup successful"}), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Signup failed: {str(e)}"}), 500
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
