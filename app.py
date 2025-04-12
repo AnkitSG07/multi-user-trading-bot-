@@ -89,6 +89,7 @@ def webhook(user_id):
             "symbol": symbol,
             "action": action.capitalize(),
             "quantity": quantity,
+            "price": float(order.filled_avg_price) if hasattr(order, 'filled_avg_price') else 0.0,
             "status": "✅"
         })
         return jsonify({"status": "success", "order_id": order.id}), 200
