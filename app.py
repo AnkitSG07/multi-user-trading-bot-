@@ -89,7 +89,7 @@ def webhook(user_id):
             "symbol": symbol,
             "action": action.capitalize(),
             "quantity": quantity,
-            "price": float(order.filled_avg_price) if hasattr(order, 'filled_avg_price') else 0.0,
+            price = float(order.filled_avg_price) if order.filled_avg_price is not None else 0.0,
             "status": "✅"
         })
         return jsonify({"status": "success", "order_id": order.id}), 200
@@ -101,7 +101,8 @@ def webhook(user_id):
             "symbol": symbol,
             "action": action.capitalize(),
             "quantity": quantity,
-            "status": "❌"
+            "status": "✅",
+            "price": price
         })
         return jsonify({"status": "error", "message": str(e)}), 500
 
