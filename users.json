@@ -3,5 +3,6 @@
     "api_key": "PKZW4WPLY5U2NLAIE6G9",
     "secret_key": "3WvNeVkEVflZkeWHMrQMU4aLkfdg6MxfP7kAubfI",
     "broker": "alpaca"
+    "strategy": "balanced"
   }
 }
