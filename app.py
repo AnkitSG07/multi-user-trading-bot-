@@ -138,6 +138,25 @@ def get_portfolio(user_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route("/strategy/<user_id>", methods=["GET", "POST"])
+def strategy_handler(user_id):
+    users = load_users()
+    if user_id not in users:
+        return jsonify({"status": "error", "message": "Invalid user"}), 404
+
+    if request.method == "GET":
+        return jsonify({"strategy": users[user_id].get("strategy", "balanced")})
+
+    if request.method == "POST":
+        data = request.get_json()
+        new_strategy = data.get("strategy", "balanced")
+
+        users[user_id]["strategy"] = new_strategy
+        with open("users.json", "w") as f:
+            json.dump(users, f, indent=2)
+
+        return jsonify({"status": "success", "message": f"Strategy updated to {new_strategy}"})
+
 @app.route("/suggested/<user_id>", methods=["GET"])
 def suggested_symbols(user_id):
     users = load_users()
