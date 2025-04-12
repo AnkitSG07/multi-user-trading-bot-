@@ -9,12 +9,10 @@ from datetime import datetime
 app = Flask(__name__)
 CORS(app)
 
-# Load user credentials
 def load_users():
     with open("users.json", "r") as f:
         return json.load(f)
 
-# Log trade history
 def log_trade(user_id, log_data):
     os.makedirs("logs", exist_ok=True)
     log_file = f"logs/{user_id}.json"
@@ -36,7 +34,6 @@ def webhook(user_id):
     users = load_users()
     if user_id not in users:
         return jsonify({"status": "error", "message": "Invalid user"}), 404
-
     user = users[user_id]
     data = request.get_json()
     print(f"📩 [{user_id}] Webhook received:", data)
@@ -48,26 +45,17 @@ def webhook(user_id):
         return jsonify({"status": "error", "message": "Missing data"}), 400
 
     try:
-        api = tradeapi.REST(
-            key_id=user["api_key"],
-            secret_key=user["secret_key"],
-            base_url="https://paper-api.alpaca.markets"
-        )
+        api = tradeapi.REST(user["api_key"], user["secret_key"], base_url="https://paper-api.alpaca.markets")
 
-        # ❌ Prevent wash trade (if trying to sell without holding)
         if action.lower() == "sell":
             try:
                 position = api.get_position(symbol)
                 held_qty = int(float(position.qty_available))
             except:
                 held_qty = 0
-
             if held_qty < quantity:
-                msg = f"❌ Not enough quantity to sell: You have {held_qty}, trying to sell {quantity}."
-                print(f"[{user_id}] {msg}")
-                return jsonify({"status": "error", "message": msg}), 400
+                return jsonify({"status": "error", "message": f"Not enough qty to sell: {held_qty}"}), 400
 
-        # ✅ Submit the order
         order = api.submit_order(
             symbol=symbol,
             qty=quantity,
@@ -97,36 +85,24 @@ def webhook(user_id):
         })
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route("/logs/<user_id>", methods=["GET"])
+@app.route("/logs/<user_id>")
 def get_logs(user_id):
     log_file = f"logs/{user_id}.json"
-    if os.path.exists(log_file):
-        with open(log_file, "r") as f:
-            return jsonify(json.load(f))
-    return jsonify([])
+    return jsonify(json.load(open(log_file))) if os.path.exists(log_file) else jsonify([])
 
-@app.route("/portfolio/<user_id>", methods=["GET"])
+@app.route("/portfolio/<user_id>")
 def get_portfolio(user_id):
     users = load_users()
-    if user_id not in users:
-        return jsonify({"status": "error", "message": "Invalid user"}), 404
-
+    if user_id not in users: return jsonify({"status": "error", "message": "Invalid user"}), 404
     user = users[user_id]
     try:
-        api = tradeapi.REST(
-            key_id=user["api_key"],
-            secret_key=user["secret_key"],
-            base_url="https://paper-api.alpaca.markets"
-        )
-
+        api = tradeapi.REST(user["api_key"], user["secret_key"], base_url="https://paper-api.alpaca.markets")
         account = api.get_account()
         positions = api.list_positions()
-
         cash = float(account.cash)
         equity = float(account.equity)
-        market_value = sum([float(p.market_value) for p in positions])
-        pnl = equity - cash  # OR use market_value directly if preferred
-
+        market_value = sum(float(p.market_value) for p in positions)
+        pnl = equity - cash
         return jsonify({
             "cash": round(cash, 2),
             "equity": round(equity, 2),
@@ -134,48 +110,39 @@ def get_portfolio(user_id):
             "pnl": round(pnl, 2),
             "status": "success"
         })
-
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/strategy/<user_id>", methods=["GET", "POST"])
 def strategy_handler(user_id):
     users = load_users()
-    if user_id not in users:
-        return jsonify({"status": "error", "message": "Invalid user"}), 404
-
+    if user_id not in users: return jsonify({"status": "error", "message": "Invalid user"}), 404
     if request.method == "GET":
         return jsonify({"strategy": users[user_id].get("strategy", "balanced")})
+    data = request.get_json()
+    users[user_id]["strategy"] = data.get("strategy", "balanced")
+    with open("users.json", "w") as f: json.dump(users, f, indent=2)
+    return jsonify({"status": "success", "message": "Strategy updated"})
 
-    if request.method == "POST":
-        data = request.get_json()
-        new_strategy = data.get("strategy", "balanced")
+@app.route("/watchlist/<user_id>", methods=["GET", "POST"])
+def watchlist_handler(user_id):
+    users = load_users()
+    if user_id not in users: return jsonify({"status": "error", "message": "Invalid user"}), 404
+    if request.method == "GET":
+        return jsonify({"watchlist": users[user_id].get("watchlist", ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"])})
+    data = request.get_json()
+    users[user_id]["watchlist"] = data.get("watchlist", [])
+    with open("users.json", "w") as f: json.dump(users, f, indent=2)
+    return jsonify({"status": "success", "message": "Watchlist updated"})
 
-        users[user_id]["strategy"] = new_strategy
-        with open("users.json", "w") as f:
-            json.dump(users, f, indent=2)
-
-        return jsonify({"status": "success", "message": f"Strategy updated to {new_strategy}"})
-
-@app.route("/suggested/<user_id>", methods=["GET"])
+@app.route("/suggested/<user_id>")
 def suggested_symbols(user_id):
     users = load_users()
-    if user_id not in users:
-        return jsonify({"status": "error", "message": "Invalid user"}), 404
-
-    TD_API_KEY = "732be95d470647be80419085887d2606"
+    if user_id not in users: return jsonify({"status": "error", "message": "Invalid user"}), 404
     user = users[user_id]
     strategy = user.get("strategy", "balanced")
-
-    try:
-        api = tradeapi.REST(
-            key_id=user["api_key"],
-            secret_key=user["secret_key"],
-            base_url="https://paper-api.alpaca.markets"
-        )
-        symbols = ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"Failed to fetch Alpaca symbols: {e}"}), 500
+    symbols = user.get("watchlist", ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"])
+    TD_API_KEY = "732be95d470647be80419085887d2606"
 
     suggestions = []
     for symbol in symbols:
@@ -183,30 +150,23 @@ def suggested_symbols(user_id):
             url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&outputsize=2&apikey={TD_API_KEY}"
             res = requests.get(url)
             data = res.json()
-
             if "values" not in data or len(data["values"]) < 2:
                 continue
-
             today = float(data["values"][0]["close"])
             yesterday = float(data["values"][1]["close"])
             change = round(((today - yesterday) / yesterday) * 100, 2)
 
-            # Strategy-based suggestion logic
             suggestion = "Hold"
             if strategy == "balanced":
-                if change < -1.5:
-                    suggestion = "Buy"
-                elif change > 1.5:
-                    suggestion = "Sell"
+                if change < -1.5: suggestion = "Buy"
+                elif change > 1.5: suggestion = "Sell"
             elif strategy == "momentum":
                 suggestion = "Buy" if change > 0 else "Sell"
             elif strategy == "reversal":
-                if change < -2:
-                    suggestion = "Buy"
-                elif change > 2:
-                    suggestion = "Sell"
+                if change < -2: suggestion = "Buy"
+                elif change > 2: suggestion = "Sell"
             elif strategy == "volume_spike":
-                suggestion = "Hold"  # Placeholder (need volume API)
+                suggestion = "Hold"
 
             suggestions.append({
                 "symbol": symbol,
@@ -219,7 +179,7 @@ def suggested_symbols(user_id):
             continue
 
     top5 = sorted(suggestions, key=lambda x: abs(x["change_percent"]), reverse=True)[:5]
-    return jsonify(top5), 200
+    return jsonify(top5)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
