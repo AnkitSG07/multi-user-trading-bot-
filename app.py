@@ -165,6 +165,7 @@ def suggested_symbols(user_id):
 
     TD_API_KEY = "732be95d470647be80419085887d2606"
     user = users[user_id]
+    strategy = user.get("strategy", "balanced")
 
     try:
         api = tradeapi.REST(
@@ -172,13 +173,12 @@ def suggested_symbols(user_id):
             secret_key=user["secret_key"],
             base_url="https://paper-api.alpaca.markets"
         )
-        assets = api.list_assets(status='active')
-        symbols = ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]  # Use this instead of top 50 for now
+        symbols = ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]
     except Exception as e:
         return jsonify({"status": "error", "message": f"Failed to fetch Alpaca symbols: {e}"}), 500
 
     suggestions = []
-    for symbol in symbols[:50]:  # Can increase to more if needed
+    for symbol in symbols:
         try:
             url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&outputsize=2&apikey={TD_API_KEY}"
             res = requests.get(url)
@@ -190,9 +190,23 @@ def suggested_symbols(user_id):
             today = float(data["values"][0]["close"])
             yesterday = float(data["values"][1]["close"])
             change = round(((today - yesterday) / yesterday) * 100, 2)
-          
-            suggestion = "Buy" if change < -1.5 else "Sell" if change > 1.5 else "Hold"
 
+            # Strategy-based suggestion logic
+            suggestion = "Hold"
+            if strategy == "balanced":
+                if change < -1.5:
+                    suggestion = "Buy"
+                elif change > 1.5:
+                    suggestion = "Sell"
+            elif strategy == "momentum":
+                suggestion = "Buy" if change > 0 else "Sell"
+            elif strategy == "reversal":
+                if change < -2:
+                    suggestion = "Buy"
+                elif change > 2:
+                    suggestion = "Sell"
+            elif strategy == "volume_spike":
+                suggestion = "Hold"  # Placeholder (need volume API)
 
             suggestions.append({
                 "symbol": symbol,
