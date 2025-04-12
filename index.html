@@ -65,6 +65,27 @@
   </style>
 </head>
 <body>
+  
+  <div class="box" style="display: flex; justify-content: space-around;">
+    <button onclick="showTab('login')">🔑 Login</button>
+    button onclick="showTab('signup')">📝 Signup</button>
+  </div>
+  <div class="box" id="signup-box" style="display: none;">
+    <h3>📝 Sign Up</h3>
+    <label for="newUserId">Choose User ID:</label>
+    <input type="text" id="newUserId" placeholder="e.g. john_doe" />
+    <label for="newApiKey">Alpaca API Key:</label>
+    <input type="text" id="newApiKey" placeholder="Enter API Key" />
+    <label for="newSecretKey">Alpaca Secret Key:</label>
+    <input type="text" id="newSecretKey" placeholder="Enter Secret Key" />
+    <button onclick="signUp()">🚀 Sign Up</button>
+  </div>
+  <div class="box" id="login-box">
+    <h3>🔑 Trading Bot Dashboard</h3>
+    <label for="userId">🔍 Enter your User ID</label>
+    <input type="text" id="userId" placeholder="e.g. ankit123" />
+    <button id="loadBtn">📥 Load Dashboard</button>
+  </div>
 
   <h1>🚀 Trading Bot Dashboard</h1>
 
@@ -357,8 +378,43 @@
     popup.style.display = "none";
   }, 4000);
 }
+
+// 👇 Signup and tab switch logic added here
+function showTab(tab) {
+  document.getElementById("signup-box").style.display = tab === "signup" ? "block" : "none";
+  document.getElementById("login-box").style.display = tab === "login" ? "block" : "none";
+}
+
+function signUp() {
+  const userId = document.getElementById("newUserId").value.trim();
+  const apiKey = document.getElementById("newApiKey").value.trim();
+  const secretKey = document.getElementById("newSecretKey").value.trim();
+
+  if (!userId || !apiKey || !secretKey) {
+    showPopup("❌ Please fill all signup fields.", false);
+    return;
+  }
+
+  fetch("https://multi-user-trading-bot.onrender.com/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, api_key: apiKey, secret_key: secretKey })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === "success") {
+      showPopup("✅ Signup successful. You can now log in.");
+      document.getElementById("userId").value = userId; // auto-fill login
+      showTab("login"); // switch to login tab
+    } else {
+      showPopup("❌ " + (data.message || "Signup failed."), false);
+    }
+  });
+}
+
+showTab("login"); // default view
 </script>
-  <div id="popup" style="
+<div id="popup" style="
   display: none;
   position: fixed;
   top: 20px;
@@ -376,5 +432,6 @@
 ">
   <span id="popup-message"></span>
 </div>
+
 </body>
 </html>
