@@ -23,14 +23,19 @@ def save_users(users):
 def log_trade(user_id, log_data):
     os.makedirs("logs", exist_ok=True)
     log_file = f"logs/{user_id}.json"
+
     logs = []
     if os.path.exists(log_file):
         with open(log_file, "r") as f:
-            logs = json.load(f)
-    logs.insert(0, log_data)
-    logs = logs[:20]
+            try:
+                logs = json.load(f)
+            except:
+                logs = []
+
+    logs.append(log_data)  # Append at the end (chronological order)
     with open(log_file, "w") as f:
         json.dump(logs, f, indent=2)
+
 
 @app.route("/")
 def home():
@@ -240,17 +245,45 @@ def get_pnl_chart(user_id):
     if not os.path.exists(log_file):
         return jsonify({"labels": [], "data": []})
 
-    with open(log_file, "r") as f:
-        logs = json.load(f)
+    try:
+        with open(log_file, "r") as f:
+            logs = json.load(f)
 
-    pnl_by_day = {}
-    for log in logs:
-        date = log["timestamp"].split()[0]
-        pnl_by_day[date] = pnl_by_day.get(date, 0) + (1 if log["action"].lower() == "buy" else -1)
+        pnl_by_day = {}
+        for log in logs:
+            date = log["timestamp"].split()[0]
+            action = log.get("action", "").lower()
+            qty = int(log.get("quantity", 1))
+            symbol = log.get("symbol", "AAPL")
+            status = log.get("status", "")
 
-    labels = sorted(pnl_by_day.keys())
-    data = [pnl_by_day[day] for day in labels]
-    return jsonify({"labels": labels, "data": data})
+            if status != "✅":
+                continue  # only successful trades
+
+            # Fetch price from Alpaca
+            try:
+                alpaca = tradeapi.REST(
+                    key_id=os.environ.get("ALPACA_API_KEY"),
+                    secret_key=os.environ.get("ALPACA_SECRET_KEY"),
+                    base_url="https://paper-api.alpaca.markets"
+                )
+                latest = alpaca.get_latest_trade(symbol)
+                price = float(latest.price)
+            except:
+                price = 100  # fallback value
+
+            pnl = price * qty
+            if action == "buy":
+                pnl *= -1
+
+            pnl_by_day[date] = pnl_by_day.get(date, 0) + pnl
+
+        labels = sorted(pnl_by_day.keys())
+        data = [round(pnl_by_day[day], 2) for day in labels]
+        return jsonify({"labels": labels, "data": data})
+    except Exception as e:
+        return jsonify({"labels": [], "data": [], "error": str(e)})
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
