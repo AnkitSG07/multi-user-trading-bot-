@@ -270,22 +270,32 @@
         }
       });
     });
-}
-  function autoTrade(symbol, action) {
-    const user = document.getElementById("userId").value.trim();
-    if (!user) return;
-    fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ symbol, action, quantity: 1 })
-    })
-    .then(res => res.json())
-    .then(data => {
-      alert("✅ Auto trade response: " + JSON.stringify(data));
-      updateChart(symbol);
-      loadUserData();
-    });
   }
+  function autoTrade(symbol, action) {
+  const user = document.getElementById("userId").value.trim();
+  if (!user) return;
+
+  fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ symbol, action, quantity: 1 })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === "success") {
+      showPopup("✅ Auto trade placed successfully.");
+    } else {
+      showPopup("❌ " + (data.message || "Something went wrong."), false);
+    }
+    updateChart(symbol);
+    loadUserData();
+  })
+  .catch(err => {
+    showPopup("❌ Failed to place trade. Please try again later.", false);
+    console.error(err);
+  });
+  }
+
 
   function updateStrategy() {
     const user = document.getElementById("userId").value.trim();
@@ -321,14 +331,50 @@
   }
 
   function removeFromWatchlist(symbol) {
-    const user = document.getElementById("userId").value.trim();
-    if (!user) return;
-    fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "remove", symbol })
-    }).then(() => loadUserData());
+  const user = document.getElementById("userId").value.trim();
+  if (!user) return;
+  fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "remove", symbol })
+  })
+  .then(() => {
+    showPopup(`❌ Removed ${symbol} from watchlist`);
+    loadUserData();
+  });
   }
+  
+  function showPopup(message, success = true) {
+  const popup = document.getElementById("popup");
+  const text = document.getElementById("popup-message");
+
+  text.innerText = message;
+  popup.style.borderColor = success ? "#28a745" : "#dc3545";
+  popup.style.color = success ? "#28a745" : "#dc3545";
+  popup.style.display = "block";
+
+  setTimeout(() => {
+    popup.style.display = "none";
+  }, 4000);
+}
 </script>
+  <div id="popup" style="
+  display: none;
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 9999;
+  font-size: 1rem;
+  max-width: 90%;
+  color: #333;
+">
+  <span id="popup-message"></span>
+</div>
 </body>
 </html>
