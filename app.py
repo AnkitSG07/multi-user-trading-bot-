@@ -234,6 +234,24 @@ def suggested_symbols(user_id):
     top5 = sorted(suggestions, key=lambda x: abs(x["change_percent"]), reverse=True)[:5]
     return jsonify(top5), 200
 
+@app.route("/pnl/<user_id>", methods=["GET"])
+def get_pnl_chart(user_id):
+    log_file = f"logs/{user_id}.json"
+    if not os.path.exists(log_file):
+        return jsonify({"labels": [], "data": []})
+
+    with open(log_file, "r") as f:
+        logs = json.load(f)
+
+    pnl_by_day = {}
+    for log in logs:
+        date = log["timestamp"].split()[0]
+        pnl_by_day[date] = pnl_by_day.get(date, 0) + (1 if log["action"].lower() == "buy" else -1)
+
+    labels = sorted(pnl_by_day.keys())
+    data = [pnl_by_day[day] for day in labels]
+    return jsonify({"labels": labels, "data": data})
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
