@@ -83,6 +83,13 @@
   </div>
 
   <div class="box">
+    <strong>📋 Custom Watchlist</strong>
+    <ul id="watchlist"></ul>
+    <input type="text" id="watchSymbol" placeholder="e.g. AAPL">
+    <button onclick="addToWatchlist()">➕ Add</button>
+  </div>
+
+  <div class="box">
     <strong>🔗 Webhook URL:</strong>
     <button class="copy-btn" onclick="copyText('webhookUrlText')">📋 Copy</button>
     <p id="webhookUrl">https://multi-user-trading-bot.onrender.com/webhook/</p>
@@ -128,7 +135,7 @@
   </div>
 
   <div class="box">
-    <strong>🔥 Suggested Trades (via Alpaca)</strong>
+    <strong>🔥 Suggested Trades</strong>
     <table id="suggested-table">
       <thead>
         <tr>
@@ -167,16 +174,10 @@
     document.getElementById("webhookUrl").innerText = webhookUrl;
     document.getElementById("webhookUrlText").value = webhookUrl;
 
-    // Load strategy
     fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`)
       .then(res => res.json())
-      .then(data => {
-        if (data.strategy) {
-          document.getElementById("strategy").value = data.strategy;
-        }
-      });
+      .then(data => { if (data.strategy) document.getElementById("strategy").value = data.strategy });
 
-    // Load portfolio summary
     fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
       .then(res => res.json())
       .then(data => {
@@ -190,63 +191,53 @@
         }
       });
 
-    // Fetch logs
     fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
       .then(res => res.json())
       .then(logs => {
         const tbody = document.getElementById("log-body");
         tbody.innerHTML = "";
-        if (!Array.isArray(logs) || logs.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5">No recent trades.</td></tr>`;
-        } else {
-          logs.forEach(log => {
-            tbody.innerHTML += `
-              <tr>
-                <td>${log.timestamp}</td>
-                <td>${log.symbol}</td>
-                <td>${log.action}</td>
-                <td>${log.quantity}</td>
-                <td>${log.status}</td>
-              </tr>`;
-          });
-        }
+        if (!logs.length) tbody.innerHTML = `<tr><td colspan="5">No recent trades.</td></tr>`;
+        else logs.forEach(log => {
+          tbody.innerHTML += `<tr><td>${log.timestamp}</td><td>${log.symbol}</td><td>${log.action}</td><td>${log.quantity}</td><td>${log.status}</td></tr>`;
+        });
       });
 
-    // Fetch suggestions
     fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
       .then(res => res.json())
       .then(suggestions => {
         const tbody = document.getElementById("suggested-body");
         tbody.innerHTML = "";
-
         if (!Array.isArray(suggestions)) {
-          const msg = suggestions.message || "No suggestions available.";
-          tbody.innerHTML = `<tr><td colspan="5">⚠️ ${msg}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5">⚠️ ${suggestions.message || "No suggestions."}</td></tr>`;
           return;
         }
-
         suggestions.forEach(item => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${item.symbol}</td>
-              <td>$${item.current_price}</td>
-              <td>${item.change_percent}%</td>
-              <td>${item.suggestion}</td>
-              <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
-            </tr>`;
+          tbody.innerHTML += `<tr>
+            <td>${item.symbol}</td>
+            <td>$${item.current_price}</td>
+            <td>${item.change_percent}%</td>
+            <td>${item.suggestion}</td>
+            <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
+          </tr>`;
         });
+        if (suggestions.length > 0) updateChart(suggestions[0].symbol);
+      });
 
-        // Load chart of top symbol
-        if (suggestions.length > 0) {
-          updateChart(suggestions[0].symbol);
-        }
+    // Load watchlist
+    fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`)
+      .then(res => res.json())
+      .then(data => {
+        const ul = document.getElementById("watchlist");
+        ul.innerHTML = "";
+        data.symbols.forEach(sym => {
+          ul.innerHTML += `<li>${sym} <button onclick="removeFromWatchlist('${sym}')">❌</button></li>`;
+        });
       });
   }
 
   function autoTrade(symbol, action) {
     const user = document.getElementById("userId").value.trim();
     if (!user) return;
-
     fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -257,9 +248,6 @@
       alert("✅ Auto trade response: " + JSON.stringify(data));
       updateChart(symbol);
       loadUserData();
-    })
-    .catch(err => {
-      alert("❌ Error placing order: " + err);
     });
   }
 
@@ -267,17 +255,11 @@
     const user = document.getElementById("userId").value.trim();
     const strategy = document.getElementById("strategy").value;
     if (!user) return;
-
     fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ strategy })
-    })
-    .then(res => res.json())
-    .then(data => {
-      alert(`✅ Strategy updated to ${strategy}`);
-      loadUserData();
-    });
+    }).then(res => res.json()).then(data => alert(`✅ Strategy updated to ${strategy}`));
   }
 
   function updateChart(symbol) {
@@ -289,6 +271,27 @@
     const text = document.getElementById(id).innerText || document.getElementById(id).value;
     navigator.clipboard.writeText(text);
     alert("📋 Copied to clipboard!");
+  }
+
+  function addToWatchlist() {
+    const user = document.getElementById("userId").value.trim();
+    const symbol = document.getElementById("watchSymbol").value.trim().toUpperCase();
+    if (!user || !symbol) return;
+    fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add", symbol })
+    }).then(() => loadUserData());
+  }
+
+  function removeFromWatchlist(symbol) {
+    const user = document.getElementById("userId").value.trim();
+    if (!user) return;
+    fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove", symbol })
+    }).then(() => loadUserData());
   }
 </script>
 </body>
