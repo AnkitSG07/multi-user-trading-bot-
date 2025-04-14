@@ -176,12 +176,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const user = new URLSearchParams(window.location.search).get("user_id");
+    document.addEventListener("DOMContentLoaded", () => {
+    const storedUserId = localStorage.getItem("userId");
+    if (!storedUserId) {
+      window.location.href = "login.html";
+      return;
+    }
 
-  if (!user) {
-    alert("User ID not provided. Redirecting to login...");
-    window.location.href = "login.html";
-  }
+    document.getElementById("userId").value = storedUserId;
+    loadUserData();
+  });
 
   function loadUserData() {
     const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
