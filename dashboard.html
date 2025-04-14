@@ -176,14 +176,15 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
+  let user = null;
+
+  document.addEventListener("DOMContentLoaded", () => {
     const storedUserId = localStorage.getItem("userId");
     if (!storedUserId) {
       window.location.href = "login.html";
       return;
     }
-
-    document.getElementById("userId").value = storedUserId;
+    user = storedUserId;
     loadUserData();
   });
 
@@ -341,13 +342,9 @@
     popup.style.display = "block";
     setTimeout(() => popup.style.display = "none", 4000);
   }
-
-  window.onload = loadUserData;
 </script>
 
-<div id="popup">
-  <span id="popup-message"></span>
-</div>
+<div id="popup"><span id="popup-message"></span></div>
 
 </body>
 </html>
