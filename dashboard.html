@@ -324,6 +324,12 @@
     document.getElementById("webhookUrl").innerText = webhookUrl;
     document.getElementById("webhookUrlText").value = webhookUrl;
 
+  const user = localStorage.getItem("userId");
+    if (!user) {
+      window.location.href = "login.html";
+      return;
+    }
+
     fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`)
       .then(res => res.json())
       .then(data => {
