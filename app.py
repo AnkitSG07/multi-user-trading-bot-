@@ -63,20 +63,22 @@ def signup():
     return jsonify({"status": "success", "message": "Signup successful"}), 200
 
 @app.route("/login", methods=["POST"])
-def login():
+def login_user():
     data = request.get_json()
     user_id = data.get("user_id", "").strip()
     password = data.get("password", "").strip()
+
+    if not user_id or not password:
+        return jsonify({"status": "error", "message": "User ID and Password are required."}), 400
+
     users = load_users()
-
     if user_id not in users:
-        return jsonify({"status": "error", "message": "User not found"}), 404
+        return jsonify({"status": "error", "message": "User not found."}), 404
 
-    hashed_pw = hashlib.sha256(password.encode()).hexdigest()
-    if users[user_id].get("password") != hashed_pw:
-        return jsonify({"status": "error", "message": "Incorrect password"}), 401
+    if users[user_id].get("password") != password:
+        return jsonify({"status": "error", "message": "Incorrect password."}), 401
 
-    return jsonify({"status": "success", "message": "Login successful"}), 200
+    return jsonify({"status": "success", "message": "Login successful."}), 200
 
 @app.route("/webhook/<user_id>", methods=["POST"])
 def webhook(user_id):
