@@ -143,6 +143,39 @@
     color: white;
   }
 
+    #watchlist-tags {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag {
+    background-color: #007bff;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+  }
+
+  .tag button {
+    background: none;
+    border: none;
+    color: white;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  select {
+    padding: 0.6rem;
+    border-radius: 5px;
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+
   @media (max-width: 768px) {
     body {
       padding: 1rem;
@@ -184,11 +217,19 @@
 
 <div class="box">
   <strong>📋 Custom Watchlist</strong>
-  <ul id="watchlist"></ul>
-  <input type="text" id="watchSymbol" placeholder="e.g. AAPL">
+  <div id="watchlist-tags"></div>
+  
+  <select id="watchSymbolDropdown">
+    <option value="">-- Select Symbol --</option>
+    <option value="AAPL">AAPL</option>
+    <option value="TSLA">TSLA</option>
+    <option value="MSFT">MSFT</option>
+    <option value="GOOG">GOOG</option>
+    <option value="AMZN">AMZN</option>
+  </select>
   <button onclick="addToWatchlist()">➕ Add</button>
 </div>
-
+  
 <div class="box">
   <strong>🔗 Webhook URL:</strong>
   <button class="copy-btn" onclick="copyText('webhookUrlText')">📋 Copy</button>
