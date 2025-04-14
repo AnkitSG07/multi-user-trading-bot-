@@ -1,8 +1,8 @@
 {
   "ankit123": {
     "password": "123",
-    "api_key": "PKZW4WPLY5U2NLAIE6G9",
-    "secret_key": "3WvNeVkEVf1ZkeWHMrQMU4aLkfdg6MxfP7kAubfI",
+    "api_key": "PKSFN8XV0A2S0TFG39NP",
+    "secret_key": "t0Mdbm0dHfFwOrMQxXhFjDIi0O0ZUqRUj3ixcD0a",
     "broker": "alpaca",
     "strategy": "balanced",
     "watchlist": ["AAPL", "TSLA", "MSFT"]
