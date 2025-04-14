@@ -3,19 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Trading Dashboard</title>
+  <title>Trading Bot Login</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       background-color: #f5f7fa;
       color: #333;
       padding: 2rem;
-      max-width: 900px;
+      max-width: 500px;
       margin: auto;
     }
-    h1 { color: #2c3e50; }
+    .box {
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2 { text-align: center; color: #2c3e50; }
     label { display: block; margin-top: 1rem; }
-    input, textarea, select {
+    input {
       width: 100%;
       padding: 0.5rem;
       margin-top: 0.2rem;
@@ -23,61 +30,64 @@
       border-radius: 5px;
     }
     button {
-      margin-top: 0.5rem;
-      padding: 0.4rem 1rem;
+      margin-top: 1rem;
+      padding: 0.6rem 1.2rem;
       background-color: #007bff;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      width: 100%;
     }
     button:hover { background-color: #0056b3; }
-    .box {
+    .tab-buttons {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 1rem;
+    }
+    .tab-buttons button {
+      width: 48%;
+      background-color: #6c757d;
+    }
+    .tab-buttons button.active {
+      background-color: #007bff;
+    }
+    #popup {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       background-color: white;
-      padding: 1rem;
+      border: 1px solid #ccc;
+      padding: 1rem 1.5rem;
       border-radius: 8px;
-      margin-top: 1rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    th, td {
-      text-align: center;
-      padding: 0.5rem;
-      border-bottom: 1px solid #ddd;
-    }
-    th { background-color: #007bff; color: white; }
-    .copy-btn {
-      float: right;
-      margin-top: -2.5rem;
-    }
-    ul { list-style: none; padding: 0; margin: 0.5rem 0 0 0; }
-    ul li { margin: 0.4rem 0; }
-    iframe {
-      width: 100%;
-      height: 300px;
-      border: none;
-      margin-top: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 9999;
+      font-size: 1rem;
+      max-width: 90%;
+      color: #333;
     }
   </style>
 </head>
 <body>
-  <body>
 
-<!-- 🔐 Login Page -->
+<h2>📈 Welcome to Trading Bot</h2>
+
+<div class="tab-buttons">
+  <button id="loginTab" onclick="showTab('login')" class="active">🔐 Login</button>
+  <button id="signupTab" onclick="showTab('signup')">📝 Signup</button>
+</div>
+
+<!-- 🔐 Login Box -->
 <div class="box" id="login-box">
-  <h3>🔐 Trading Bot Login</h3>
   <label for="userId">🔑 Enter your User ID</label>
   <input type="text" id="userId" placeholder="e.g. ankit123" />
   <button onclick="login()">📥 Load Dashboard</button>
 </div>
 
-<!-- 🧾 Signup Page -->
-<div class="box" id="signup-box" style="display: none;">
-  <h3>📝 Sign Up</h3>
+<!-- 📝 Signup Box -->
+<div class="box" id="signup-box" style="display:none;">
   <label for="newUserId">Choose User ID:</label>
   <input type="text" id="newUserId" placeholder="e.g. john_doe" />
 
@@ -90,371 +100,79 @@
   <button onclick="signUp()">🚀 Sign Up</button>
 </div>
 
-<!-- 🌐 Tab Switcher -->
-<div class="box" style="display: flex; justify-content: space-around;">
-  <button onclick="showTab('login')">🔑 Login</button>
-  <button onclick="showTab('signup')">📝 Signup</button>
+<div id="popup">
+  <span id="popup-message"></span>
 </div>
 
-<!-- 📊 Dashboard (hidden until login) -->
-<div id="dashboard-page" style="display: none;">
-  <h1>🚀 Trading Bot Dashboard</h1>
-
-  <div class="box">
-    <label for="strategy">📊 Select Strategy:</label>
-    <select id="strategy" onchange="updateStrategy()">
-      <option value="balanced">Balanced</option>
-      <option value="momentum">Momentum</option>
-      <option value="reversal">Reversal</option>
-      <option value="volume_spike">Volume Spike</option>
-    </select>
-  </div>
-
-  <div class="box">
-    <strong>📋 Custom Watchlist</strong>
-    <ul id="watchlist"></ul>
-    <input type="text" id="watchSymbol" placeholder="e.g. AAPL">
-    <button onclick="addToWatchlist()">➕ Add</button>
-  </div>
-
-  <div class="box">
-    <strong>🔗 Webhook URL:</strong>
-    <button class="copy-btn" onclick="copyText('webhookUrlText')">📋 Copy</button>
-    <p id="webhookUrl">https://multi-user-trading-bot.onrender.com/webhook/</p>
-    <input type="text" id="webhookUrlText" readonly style="display:none;">
-  </div>
-
-  <div class="box">
-    <strong>📦 Sample TradingView Alert JSON:</strong>
-    <button class="copy-btn" onclick="copyText('alertJsonText')">📋 Copy</button>
-    <textarea id="alertJsonText" rows="5">{
-  "symbol": "AAPL",
-  "action": "buy",
-  "quantity": 1
-}</textarea>
-  </div>
-
-  <div class="box">
-    <strong>💼 Account Summary:</strong>
-    <ul id="summary-list">
-      <li>💵 Cash: <span id="cash">--</span></li>
-      <li>📈 Market Value: <span id="market_value">--</span></li>
-      <li>💰 Total Equity: <span id="equity">--</span></li>
-      <li>📊 Unrealized P/L: <span id="pnl">--</span></li>
-    </ul>
-  </div>
-
-  <div class="box">
-    <strong>📊 Recent Trades:</strong>
-    <table id="trade-table">
-      <thead>
-        <tr>
-          <th>Time</th>
-          <th>Symbol</th>
-          <th>Action</th>
-          <th>Qty</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="log-body">
-        <tr><td colspan="5">Enter a user ID to load trades</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="box">
-    <strong>🔥 Suggested Trades</strong>
-    <table id="suggested-table">
-      <thead>
-        <tr>
-          <th>Symbol</th>
-          <th>Price</th>
-          <th>Change%</th>
-          <th>Suggestion</th>
-          <th>Auto Trade</th>
-        </tr>
-      </thead>
-      <tbody id="suggested-body">
-        <tr><td colspan="5">Enter User ID to load suggestions</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="box">
-    <strong>📈 Live Chart (by TradingView)</strong>
-    <iframe id="chart-frame" src="https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:AAPL&interval=D&theme=light" loading="lazy"></iframe>
-  </div>
-
-  <div class="box">
-    <strong>📉 PnL Chart (Daily)</strong>
-    <canvas id="pnlChart"></canvas>
-  </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-  document.getElementById("loadBtn").addEventListener("click", loadUserData);
-  document.getElementById("userId").addEventListener("keydown", function (e) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      loadUserData();
-    }
-  });
+  function showTab(tab) {
+    const loginBox = document.getElementById("login-box");
+    const signupBox = document.getElementById("signup-box");
+    const loginTab = document.getElementById("loginTab");
+    const signupTab = document.getElementById("signupTab");
 
-  function loadUserData() {
-    const user = document.getElementById("userId").value.trim();
-    if (!user) return alert("Please enter a valid User ID");
-
-    const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
-    document.getElementById("webhookUrl").innerText = webhookUrl;
-    document.getElementById("webhookUrlText").value = webhookUrl;
-
-    fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`)
-      .then(res => res.json())
-      .then(data => { if (data.strategy) document.getElementById("strategy").value = data.strategy });
-
-    fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === "success") {
-          document.getElementById("cash").innerText = `$${data.cash}`;
-          document.getElementById("market_value").innerText = `$${data.market_value}`;
-          document.getElementById("equity").innerText = `$${data.equity}`;
-          document.getElementById("pnl").innerText = `$${data.pnl}`;
-        } else {
-          document.getElementById("summary-list").innerHTML = `<li>⚠️ Unable to load portfolio</li>`;
-        }
-      });
-
-    fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
-      .then(res => res.json())
-      .then(logs => {
-        const tbody = document.getElementById("log-body");
-        tbody.innerHTML = "";
-        if (!logs.length) tbody.innerHTML = `<tr><td colspan="5">No recent trades.</td></tr>`;
-        else logs.forEach(log => {
-          tbody.innerHTML += `<tr><td>${log.timestamp}</td><td>${log.symbol}</td><td>${log.action}</td><td>${log.quantity}</td><td>${log.status}</td></tr>`;
-        });
-      });
-
-    fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
-      .then(res => res.json())
-      .then(suggestions => {
-        const tbody = document.getElementById("suggested-body");
-        tbody.innerHTML = "";
-        if (!Array.isArray(suggestions)) {
-          tbody.innerHTML = `<tr><td colspan="5">⚠️ ${suggestions.message || "No suggestions."}</td></tr>`;
-          return;
-        }
-        suggestions.forEach(item => {
-          tbody.innerHTML += `<tr>
-            <td>${item.symbol}</td>
-            <td>$${item.current_price}</td>
-            <td>${item.change_percent}%</td>
-            <td>${item.suggestion}</td>
-            <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
-          </tr>`;
-        });
-        if (suggestions.length > 0) updateChart(suggestions[0].symbol);
-      });
-
-    // Load watchlist
-    fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`)
-      .then(res => res.json())
-      .then(data => {
-        const ul = document.getElementById("watchlist");
-        ul.innerHTML = "";
-        data.symbols.forEach(sym => {
-          ul.innerHTML += `<li>${sym} <button onclick="removeFromWatchlist('${sym}')">❌</button></li>`;
-        });
-      });
-    loadPnlChart(user);
-  }
-
-  function loadPnlChart(user) {
-  fetch(`https://multi-user-trading-bot.onrender.com/pnl/${user}`)
-    .then(res => res.json())
-    .then(pnl => {
-      const ctx = document.getElementById("pnlChart").getContext("2d");
-      new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: pnl.labels,
-          datasets: [{
-            label: "PnL Over Time",
-            data: pnl.data,
-            borderColor: "#28a745",
-            backgroundColor: "rgba(40, 167, 69, 0.1)",
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      });
-    });
-  }
-  function autoTrade(symbol, action) {
-  const user = document.getElementById("userId").value.trim();
-  if (!user) return;
-
-  fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ symbol, action, quantity: 1 })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.status === "success") {
-      showPopup("✅ Auto trade placed successfully.");
+    if (tab === "login") {
+      loginBox.style.display = "block";
+      signupBox.style.display = "none";
+      loginTab.classList.add("active");
+      signupTab.classList.remove("active");
     } else {
-      showPopup("❌ " + (data.message || "Something went wrong."), false);
+      loginBox.style.display = "none";
+      signupBox.style.display = "block";
+      loginTab.classList.remove("active");
+      signupTab.classList.add("active");
     }
-    updateChart(symbol);
-    loadUserData();
-  })
-  .catch(err => {
-    showPopup("❌ Failed to place trade. Please try again later.", false);
-    console.error(err);
-  });
   }
 
-
-  function updateStrategy() {
-    const user = document.getElementById("userId").value.trim();
-    const strategy = document.getElementById("strategy").value;
-    if (!user) return;
-    fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ strategy })
-    }).then(res => res.json()).then(data => alert(`✅ Strategy updated to ${strategy}`));
-  }
-
-  function updateChart(symbol) {
-    const frame = document.getElementById("chart-frame");
-    frame.src = `https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:${symbol}&interval=D&theme=light`;
-  }
-
-  function copyText(id) {
-    const text = document.getElementById(id).innerText || document.getElementById(id).value;
-    navigator.clipboard.writeText(text);
-    alert("📋 Copied to clipboard!");
-  }
-
-  function addToWatchlist() {
-    const user = document.getElementById("userId").value.trim();
-    const symbol = document.getElementById("watchSymbol").value.trim().toUpperCase();
-    if (!user || !symbol) return;
-    fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "add", symbol })
-    }).then(() => loadUserData());
-  }
-
-  function removeFromWatchlist(symbol) {
-  const user = document.getElementById("userId").value.trim();
-  if (!user) return;
-  fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "remove", symbol })
-  })
-  .then(() => {
-    showPopup(`❌ Removed ${symbol} from watchlist`);
-    loadUserData();
-  });
-  }
-  
-  function showPopup(message, success = true) {
-  const popup = document.getElementById("popup");
-  const text = document.getElementById("popup-message");
-
-  text.innerText = message;
-  popup.style.borderColor = success ? "#28a745" : "#dc3545";
-  popup.style.color = success ? "#28a745" : "#dc3545";
-  popup.style.display = "block";
-
-  setTimeout(() => {
-    popup.style.display = "none";
-  }, 4000);
-}
-
-// 👇 Signup and tab switch logic added here
-function showTab(tab) {
-  document.getElementById("signup-box").style.display = tab === "signup" ? "block" : "none";
-  document.getElementById("login-box").style.display = tab === "login" ? "block" : "none";
-}
-
-function signUp() {
-  const userId = document.getElementById("newUserId").value.trim();
-  const apiKey = document.getElementById("newApiKey").value.trim();
-  const secretKey = document.getElementById("newSecretKey").value.trim();
-
-  if (!userId || !apiKey || !secretKey) {
-    showPopup("❌ Please fill all signup fields.", false);
-    return;
-  }
-
-  fetch("https://multi-user-trading-bot.onrender.com/signup", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: userId, api_key: apiKey, secret_key: secretKey })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.status === "success") {
-      showPopup("✅ Signup successful. You can now log in.");
-      document.getElementById("userId").value = userId; // auto-fill login
-      showTab("login"); // switch to login tab
-    } else {
-      showPopup("❌ " + (data.message || "Signup failed."), false);
-    }
-  });
-}
-
-showTab("login"); // default view
-
-function login() {
+  function login() {
     const user = document.getElementById("userId").value.trim();
     if (!user) {
       showPopup("❌ Please enter a valid User ID.", false);
       return;
     }
-
-    // Hide login/signup and show dashboard
-    document.getElementById("login-box").style.display = "none";
-    document.getElementById("signup-box").style.display = "none";
-    document.getElementById("dashboard-page").style.display = "block";
-
-    // Load dashboard data
-    loadUserData();
+    // Redirect to dashboard
+    window.location.href = `dashboard.html?user_id=${encodeURIComponent(user)}`;
   }
-  
+
+  function signUp() {
+    const userId = document.getElementById("newUserId").value.trim();
+    const apiKey = document.getElementById("newApiKey").value.trim();
+    const secretKey = document.getElementById("newSecretKey").value.trim();
+
+    if (!userId || !apiKey || !secretKey) {
+      showPopup("❌ Please fill all signup fields.", false);
+      return;
+    }
+
+    fetch("https://multi-user-trading-bot.onrender.com/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId, api_key: apiKey, secret_key: secretKey })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === "success") {
+        showPopup("✅ Signup successful! Please log in.");
+        document.getElementById("userId").value = userId;
+        showTab("login");
+      } else {
+        showPopup("❌ " + (data.message || "Signup failed."), false);
+      }
+    });
+  }
+
+  function showPopup(message, success = true) {
+    const popup = document.getElementById("popup");
+    const text = document.getElementById("popup-message");
+    text.innerText = message;
+    popup.style.borderColor = success ? "#28a745" : "#dc3545";
+    popup.style.color = success ? "#28a745" : "#dc3545";
+    popup.style.display = "block";
+    setTimeout(() => {
+      popup.style.display = "none";
+    }, 4000);
+  }
 </script>
-<div id="popup" style="
-  display: none;
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: white;
-  border: 1px solid #ccc;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  z-index: 9999;
-  font-size: 1rem;
-  max-width: 90%;
-  color: #333;
-">
-  <span id="popup-message"></span>
-</div>
+
 </body>
 </html>
