@@ -435,8 +435,9 @@
   }
 
   function updateChart(symbol) {
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
     const frame = document.getElementById("chart-frame");
-    frame.src = `https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:${symbol}&interval=D&theme=light`;
+    frame.src = `https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:${symbol}&interval=D&theme=${theme}`;
   }
 
   function copyText(id) {
@@ -483,12 +484,15 @@
     }).then(() => loadUserData());
   }
 
+  let pnlChartInstance = null;
+  
   function loadPnlChart() {
     fetch(`https://multi-user-trading-bot.onrender.com/pnl/${user}`)
       .then(res => res.json())
       .then(pnl => {
         const ctx = document.getElementById("pnlChart").getContext("2d");
-        new Chart(ctx, {
+        if (pnlChartInstance) pnlChartInstance.destroy();  // <- this line
+        pnlChartInstance = new Chart(ctx, {
           type: "line",
           data: {
             labels: pnl.labels,
@@ -511,7 +515,6 @@
         });
       });
   }
-
   function showPopup(message, success = true) {
     const popup = document.getElementById("popup");
     const text = document.getElementById("popup-message");
