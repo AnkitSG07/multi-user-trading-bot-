@@ -9,10 +9,7 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import base64
 
-
-FERNET_SECRET = "smarthandicrafts2024"  # Must match frontend
-key = base64.urlsafe_b64encode(FERNET_SECRET.ljust(32)[:32].encode())
-fernet = Fernet(key)
+fernet = Fernet(os.environ["FERNET_KEY"])
 
 app = Flask(__name__)
 CORS(app)
@@ -102,9 +99,13 @@ def webhook(user_id):
         return jsonify({"status": "error", "message": "Missing data"}), 400
 
     try:
+        api_key = fernet.decrypt(user["api_key"].encode()).decode()
+        secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
+    except Exception:
+        return jsonify({"status": "error", "message": "Decryption failed. Please reconnect Alpaca API."}), 500
         api = tradeapi.REST(
-            key_id=user["api_key"],
-            secret_key=user["secret_key"],
+            key_id=api_key,
+            secret_key=secret_key,
             base_url="https://paper-api.alpaca.markets"
         )
         if action.lower() == "sell":
@@ -174,9 +175,13 @@ def get_portfolio(user_id):
         return jsonify({"status": "error", "message": "Invalid user"}), 404
     user = users[user_id]
     try:
+        api_key = fernet.decrypt(user["api_key"].encode()).decode()
+        secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
+    except Exception:
+        return jsonify({"status": "error", "message": "Decryption failed. Please reconnect Alpaca API."}), 500
         api = tradeapi.REST(
-            key_id=user["api_key"],
-            secret_key=user["secret_key"],
+            key_id=api_key,
+            secret_key=secret_key,
             base_url="https://paper-api.alpaca.markets"
         )
         account = api.get_account()
@@ -199,27 +204,27 @@ def get_portfolio(user_id):
 def connect_alpaca():
     data = request.get_json()
     user_id = data.get("user_id", "").strip()
-    enc_api_key = data.get("api_key", "").strip()
-    enc_secret_key = data.get("secret_key", "").strip()
+    api_key = data.get("api_key", "").strip()
+    secret_key = data.get("secret_key", "").strip()
 
-    if not user_id or not enc_api_key or not enc_secret_key:
+    if not user_id or not api_key or not secret_key:
         return jsonify({"status": "error", "message": "Missing data"}), 400
 
     try:
-        api_key = fernet.decrypt(enc_api_key.encode()).decode()
-        secret_key = fernet.decrypt(enc_secret_key.encode()).decode()
+        enc_api_key = fernet.encrypt(api_key.encode()).decode()
+        enc_secret_key = fernet.encrypt(secret_key.encode()).decode()
     except Exception as e:
-        return jsonify({"status": "error", "message": "Invalid encryption"}), 400
+        return jsonify({"status": "error", "message": "Encryption failed"}), 500
 
     users = load_users()
     if user_id not in users:
         return jsonify({"status": "error", "message": "User not found"}), 404
 
-    users[user_id]["api_key"] = api_key
-    users[user_id]["secret_key"] = secret_key
+    users[user_id]["api_key"] = enc_api_key
+    users[user_id]["secret_key"] = enc_secret_key
     save_users(users)
 
-    return jsonify({"status": "success", "message": "API keys updated securely"}), 200
+    return jsonify({"status": "success", "message": "API keys saved securely"}), 200
 
 
 @app.route("/strategy/<user_id>", methods=["GET", "POST"])
