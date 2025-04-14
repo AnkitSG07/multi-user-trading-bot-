@@ -7,20 +7,28 @@
 <style>
   :root {
     --bg: #f5f7fa;
-    --text: #333;
+    --text: #212529;
     --primary: #007bff;
+    --secondary: #6c757d;
     --card: #ffffff;
+    --accent: #f8f9fa;
     --popup-bg: #ffffff;
-    --popup-border: #ccc;
+    --popup-border: #dee2e6;
+    --success: #28a745;
+    --danger: #dc3545;
   }
 
   [data-theme="dark"] {
-    --bg: #1e1e1e;
-    --text: #f1f1f1;
-    --primary: #3498db;
-    --card: #2c2c2c;
-    --popup-bg: #333;
-    --popup-border: #555;
+    --bg: #121212;
+    --text: #e0e0e0;
+    --primary: #0d6efd;
+    --secondary: #adb5bd;
+    --card: #1f1f1f;
+    --accent: #2c2c2c;
+    --popup-bg: #2a2a2a;
+    --popup-border: #444;
+    --success: #28a745;
+    --danger: #dc3545;
   }
 
   body {
@@ -34,7 +42,10 @@
     transition: background 0.3s, color 0.3s;
   }
 
-  h1 { color: var(--text); }
+  h1, h2, h3 {
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
 
   .header {
     position: sticky;
@@ -50,36 +61,42 @@
 
   .box {
     background-color: var(--card);
-    padding: 1rem;
-    border-radius: 8px;
-    margin-top: 1rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-    transition: background 0.3s;
+    padding: 1.2rem;
+    border-radius: 10px;
+    margin-top: 1.2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: background 0.3s, box-shadow 0.3s;
   }
 
   input, textarea, select {
     width: 100%;
-    padding: 0.6rem;
-    margin-top: 0.3rem;
+    padding: 0.7rem;
+    margin-top: 0.4rem;
     border-radius: 6px;
     border: 1px solid #ccc;
+    background: var(--accent);
+    color: var(--text);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--secondary);
   }
 
   button {
-    padding: 0.5rem 1rem;
+    padding: 0.6rem 1.2rem;
     background: var(--primary);
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     margin-top: 0.5rem;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 500;
     transition: 0.3s ease;
   }
 
   button:hover {
     background-color: #0056b3;
-    transform: scale(1.02);
+    transform: translateY(-1px);
   }
 
   .copy-btn {
@@ -111,9 +128,9 @@
   }
 
   th, td {
-    padding: 0.6rem;
+    padding: 0.7rem;
     text-align: center;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #dee2e6;
   }
 
   th {
@@ -143,31 +160,31 @@
     color: white;
   }
 
- #watchlistTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
+  #watchlistTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 
-.watchlist-badge {
-  display: flex;
-  align-items: center;
-  background-color: #007bff;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  position: relative;
-}
+  .watchlist-badge {
+    display: flex;
+    align-items: center;
+    background-color: var(--primary);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+  }
 
-.watchlist-badge button {
-  background: transparent;
-  border: none;
-  color: white;
-  margin-left: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
+  .watchlist-badge button {
+    background: transparent;
+    border: none;
+    color: white;
+    margin-left: 8px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
   @media (max-width: 768px) {
     body {
       padding: 1rem;
@@ -190,13 +207,12 @@
 </head>
 <body>
 
-<!-- Header with greeting and logout -->
-<div style="display: flex; justify-content: space-between; align-items: center;">
+<div class="header">
   <h1>🚀 Welcome, <span id="greetingUser"></span></h1>
-  <button onclick="logout()" style="background-color: #dc3545; color: white; padding: 0.5rem 1.2rem; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+  <button onclick="logout()" style="background-color: #dc3545;">Logout</button>
+  <button class="theme-toggle" onclick="toggleTheme()">🌓 Toggle Theme</button>
 </div>
 
-<!-- Remaining dashboard UI -->
 <div class="box">
   <label for="strategy">📊 Select Strategy:</label>
   <select id="strategy" onchange="updateStrategy()">
@@ -216,7 +232,7 @@
   </div>
   <div id="watchlistTags"></div>
 </div>
-  
+
 <div class="box">
   <strong>🔗 Webhook URL:</strong>
   <button class="copy-btn" onclick="copyText('webhookUrlText')">📋 Copy</button>
@@ -297,6 +313,8 @@
   <button onclick="connectAlpaca()">🔄 Connect</button>
 </div>
 
+<div id="popup"><span id="popup-message"></span></div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
   
@@ -314,6 +332,11 @@
     loadUserData();
   });
 
+  function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+  }
+
   function logout() {
     localStorage.removeItem("userId");
     window.location.href = "login.html";
@@ -323,12 +346,6 @@
     const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
     document.getElementById("webhookUrl").innerText = webhookUrl;
     document.getElementById("webhookUrlText").value = webhookUrl;
-
-  const user = localStorage.getItem("userId");
-    if (!user) {
-      window.location.href = "login.html";
-      return;
-    }
 
     fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`)
       .then(res => res.json())
@@ -381,10 +398,13 @@
     fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`)
       .then(res => res.json())
       .then(data => {
-        const ul = document.getElementById("watchlist");
-        ul.innerHTML = "";
+        const container = document.getElementById("watchlistTags");
+        container.innerHTML = "";
         data.symbols.forEach(sym => {
-          ul.innerHTML += `<li>${sym} <button onclick="removeFromWatchlist('${sym}')">❌</button></li>`;
+          const badge = document.createElement("div");
+          badge.className = "watchlist-badge";
+          badge.innerHTML = `${sym} <button onclick="removeFromWatchlist('${sym}')">×</button>`;
+          container.appendChild(badge);
         });
       });
 
@@ -425,57 +445,43 @@
     showPopup("📋 Copied to clipboard!");
   }
 
-function autocompleteSearch() {
-  const query = document.getElementById("watchSymbol").value.trim();
-  if (query.length < 2) return;
+  function autocompleteSearch() {
+    const query = document.getElementById("watchSymbol").value.trim();
+    if (query.length < 2) return;
 
-  fetch(`https://api.twelvedata.com/symbol_search?symbol=${query}&apikey=732be95d470647be80419085887d2606`)
-    .then(res => res.json())
-    .then(data => {
-      const list = document.getElementById("symbolList");
-      list.innerHTML = "";
-      if (data.data) {
-        data.data.slice(0, 10).forEach(item => {
-          const option = document.createElement("option");
-          option.value = item.symbol;
-          list.appendChild(option);
-        });
-      }
-    });
-}
+    fetch(`https://api.twelvedata.com/symbol_search?symbol=${query}&apikey=732be95d470647be80419085887d2606`)
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById("symbolList");
+        list.innerHTML = "";
+        if (data.data) {
+          data.data.slice(0, 10).forEach(item => {
+            const option = document.createElement("option");
+            option.value = item.symbol;
+            list.appendChild(option);
+          });
+        }
+      });
+  }
 
-function addToWatchlist() {
-  const symbol = document.getElementById("watchSymbol").value.trim().toUpperCase();
-  if (!symbol) return;
+  function addToWatchlist() {
+    const symbol = document.getElementById("watchSymbol").value.trim().toUpperCase();
+    if (!symbol) return;
 
-  fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "add", symbol })
-  }).then(() => loadUserData());
-}
+    fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add", symbol })
+    }).then(() => loadUserData());
+  }
 
-function removeFromWatchlist(symbol) {
-  fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "remove", symbol })
-  }).then(() => loadUserData());
-}
-
-// Modify your existing part inside loadUserData() for watchlist
-fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`)
-  .then(res => res.json())
-  .then(data => {
-    const container = document.getElementById("watchlistTags");
-    container.innerHTML = "";
-    data.symbols.forEach(sym => {
-      const badge = document.createElement("div");
-      badge.className = "watchlist-badge";
-      badge.innerHTML = `${sym} <button onclick="removeFromWatchlist('${sym}')">×</button>`;
-      container.appendChild(badge);
-    });
-  });
+  function removeFromWatchlist(symbol) {
+    fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove", symbol })
+    }).then(() => loadUserData());
+  }
 
   function loadPnlChart() {
     fetch(`https://multi-user-trading-bot.onrender.com/pnl/${user}`)
@@ -524,7 +530,7 @@ fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`)
       return;
     }
 
-    const ENCRYPTION_SECRET = "smarthandicrafts2024"; // CHANGE THIS and keep it same in app.py
+    const ENCRYPTION_SECRET = "smarthandicrafts2024";
     const encryptedKey = CryptoJS.AES.encrypt(apiKey, ENCRYPTION_SECRET).toString();
     const encryptedSecret = CryptoJS.AES.encrypt(secretKey, ENCRYPTION_SECRET).toString();
 
@@ -547,8 +553,8 @@ fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`)
     })
     .catch(() => showPopup("❌ Network error", false));
   }
-  
 </script>
+  
 <div id="popup"><span id="popup-message"></span></div>
 
 </body>
