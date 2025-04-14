@@ -82,11 +82,13 @@
 </head>
 <body>
 
+<!-- Header with greeting and logout -->
 <div style="display: flex; justify-content: space-between; align-items: center;">
   <h1>🚀 Welcome, <span id="greetingUser"></span></h1>
-  <button onclick="logout()" style="background-color: #dc3545; color: white; padding: 0.4rem 1rem; border: none; border-radius: 5px;">Logout</button>
+  <button onclick="logout()" style="background-color: #dc3545; color: white; padding: 0.5rem 1.2rem; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
 </div>
 
+<!-- Remaining dashboard UI -->
 <div class="box">
   <label for="strategy">📊 Select Strategy:</label>
   <select id="strategy" onchange="updateStrategy()">
@@ -179,17 +181,23 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  let user = null;
+  let user = "";
 
   document.addEventListener("DOMContentLoaded", () => {
-    const storedUserId = localStorage.getItem("userId");
-    if (!storedUserId) {
+    user = localStorage.getItem("userId");
+    if (!user) {
       window.location.href = "login.html";
       return;
     }
-    user = storedUserId;
+
+    document.getElementById("greetingUser").textContent = user;
     loadUserData();
   });
+
+  function logout() {
+    localStorage.removeItem("userId");
+    window.location.href = "login.html";
+  }
 
   function loadUserData() {
     const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
@@ -198,7 +206,9 @@
 
     fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`)
       .then(res => res.json())
-      .then(data => { if (data.strategy) document.getElementById("strategy").value = data.strategy });
+      .then(data => {
+        if (data.strategy) document.getElementById("strategy").value = data.strategy;
+      });
 
     fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
       .then(res => res.json())
@@ -252,7 +262,7 @@
         });
       });
 
-    loadPnlChart(user);
+    loadPnlChart();
   }
 
   function autoTrade(symbol, action) {
@@ -307,7 +317,7 @@
     }).then(() => loadUserData());
   }
 
-  function loadPnlChart(user) {
+  function loadPnlChart() {
     fetch(`https://multi-user-trading-bot.onrender.com/pnl/${user}`)
       .then(res => res.json())
       .then(pnl => {
@@ -345,17 +355,6 @@
     popup.style.display = "block";
     setTimeout(() => popup.style.display = "none", 4000);
   }
-
-  / Update user greeting
-const user = localStorage.getItem("userId");
-if (!user) window.location.href = "login.html";
-document.getElementById("greetingUser").textContent = user;
-
-// Logout Function
-function logout() {
-  localStorage.removeItem("userId");
-  window.location.href = "login.html";
-}
 </script>
 
 <div id="popup"><span id="popup-message"></span></div>
