@@ -82,7 +82,10 @@
 </head>
 <body>
 
-<h1>🚀 Trading Bot Dashboard</h1>
+<div style="display: flex; justify-content: space-between; align-items: center;">
+  <h1>🚀 Welcome, <span id="greetingUser"></span></h1>
+  <button onclick="logout()" style="background-color: #dc3545; color: white; padding: 0.4rem 1rem; border: none; border-radius: 5px;">Logout</button>
+</div>
 
 <div class="box">
   <label for="strategy">📊 Select Strategy:</label>
@@ -342,6 +345,17 @@
     popup.style.display = "block";
     setTimeout(() => popup.style.display = "none", 4000);
   }
+
+  / Update user greeting
+const user = localStorage.getItem("userId");
+if (!user) window.location.href = "login.html";
+document.getElementById("greetingUser").textContent = user;
+
+// Logout Function
+function logout() {
+  localStorage.removeItem("userId");
+  window.location.href = "login.html";
+}
 </script>
 
 <div id="popup"><span id="popup-message"></span></div>
