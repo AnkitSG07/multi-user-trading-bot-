@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create Profile</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 2rem;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom, #05002b, #122661);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .form-box {
+      width: 100%;
+      max-width: 400px;
+    }
+    input {
+      width: 100%;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      border: none;
+      border-radius: 30px;
+      background-color: #e8e8e8;
+      font-size: 1rem;
+    }
+    button {
+      width: 100%;
+      padding: 1rem;
+      margin-top: 1rem;
+      border: none;
+      border-radius: 30px;
+      background-color: #28c745;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #22a838;
+    }
+    .captcha-img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Create Profile</h2>
+
+  <div class="form-box">
+    <input type="text" id="name" placeholder="👤 Name" />
+    <input type="email" id="email" placeholder="✉️ Email" />
+    <input type="text" id="mobile" placeholder="📇 Mobile Number" />
+    <input type="text" id="username" placeholder="👥 Choose Username" />
+    <input type="password" id="password" placeholder="🔒 Password" />
+    
+    <img src="https://dummyimage.com/300x80/ffffff/007bff&text=XnAW3" alt="CAPTCHA" class="captcha-img" />
+    <input type="text" id="captcha" placeholder="🔐 Enter Captcha" />
+
+    <button onclick="signUp()">🚀 Sign Up</button>
+  </div>
+
+  <script>
+    function signUp() {
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const mobile = document.getElementById("mobile").value.trim();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const captcha = document.getElementById("captcha").value.trim();
+
+      if (!name || !email || !mobile || !username || !password || !captcha) {
+        alert("❌ Please fill all the fields correctly.");
+        return;
+      }
+
+      // Sample submission to backend API (adjust the URL as needed)
+      fetch("https://multi-user-trading-bot.onrender.com/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          mobile,
+          user_id: username,
+          password,
+          captcha
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          alert("✅ Signup successful! You can now login.");
+          window.location.href = "login.html";
+        } else {
+          alert("❌ " + (data.message || "Signup failed."));
+        }
+      })
+      .catch(() => alert("❌ Network error. Please try again later."));
+    }
+  </script>
+
+</body>
+</html>
