@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trading Bot Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f7fa;
+      color: #333;
+      padding: 2rem;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1 { color: #2c3e50; }
+    label { display: block; margin-top: 1rem; }
+    input, textarea, select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.2rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      margin-top: 0.5rem;
+      padding: 0.4rem 1rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover { background-color: #0056b3; }
+    .box {
+      background-color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      text-align: center;
+      padding: 0.5rem;
+      border-bottom: 1px solid #ddd;
+    }
+    th { background-color: #007bff; color: white; }
+    .copy-btn {
+      float: right;
+      margin-top: -2.5rem;
+    }
+    ul { list-style: none; padding: 0; margin: 0.5rem 0 0 0; }
+    ul li { margin: 0.4rem 0; }
+    iframe {
+      width: 100%;
+      height: 300px;
+      border: none;
+      margin-top: 1rem;
+    }
+    #popup {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 9999;
+      font-size: 1rem;
+      max-width: 90%;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🚀 Trading Bot Dashboard</h1>
+
+<div class="box">
+  <label for="strategy">📊 Select Strategy:</label>
+  <select id="strategy" onchange="updateStrategy()">
+    <option value="balanced">Balanced</option>
+    <option value="momentum">Momentum</option>
+    <option value="reversal">Reversal</option>
+    <option value="volume_spike">Volume Spike</option>
+  </select>
+</div>
+
+<div class="box">
+  <strong>📋 Custom Watchlist</strong>
+  <ul id="watchlist"></ul>
+  <input type="text" id="watchSymbol" placeholder="e.g. AAPL">
+  <button onclick="addToWatchlist()">➕ Add</button>
+</div>
+
+<div class="box">
+  <strong>🔗 Webhook URL:</strong>
+  <button class="copy-btn" onclick="copyText('webhookUrlText')">📋 Copy</button>
+  <p id="webhookUrl"></p>
+  <input type="text" id="webhookUrlText" readonly style="display:none;">
+</div>
+
+<div class="box">
+  <strong>📦 Sample TradingView Alert JSON:</strong>
+  <button class="copy-btn" onclick="copyText('alertJsonText')">📋 Copy</button>
+  <textarea id="alertJsonText" rows="5">{
+  "symbol": "AAPL",
+  "action": "buy",
+  "quantity": 1
+}</textarea>
+</div>
+
+<div class="box">
+  <strong>💼 Account Summary:</strong>
+  <ul id="summary-list">
+    <li>💵 Cash: <span id="cash">--</span></li>
+    <li>📈 Market Value: <span id="market_value">--</span></li>
+    <li>💰 Total Equity: <span id="equity">--</span></li>
+    <li>📊 Unrealized P/L: <span id="pnl">--</span></li>
+  </ul>
+</div>
+
+<div class="box">
+  <strong>📊 Recent Trades:</strong>
+  <table id="trade-table">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Symbol</th>
+        <th>Action</th>
+        <th>Qty</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="log-body">
+      <tr><td colspan="5">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="box">
+  <strong>🔥 Suggested Trades</strong>
+  <table id="suggested-table">
+    <thead>
+      <tr>
+        <th>Symbol</th>
+        <th>Price</th>
+        <th>Change%</th>
+        <th>Suggestion</th>
+        <th>Auto Trade</th>
+      </tr>
+    </thead>
+    <tbody id="suggested-body">
+      <tr><td colspan="5">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="box">
+  <strong>📈 Live Chart (by TradingView)</strong>
+  <iframe id="chart-frame" src="https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:AAPL&interval=D&theme=light" loading="lazy"></iframe>
+</div>
+
+<div class="box">
+  <strong>📉 PnL Chart (Daily)</strong>
+  <canvas id="pnlChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const user = new URLSearchParams(window.location.search).get("user_id");
+
+  if (!user) {
+    alert("User ID not provided. Redirecting to login...");
+    window.location.href = "login.html";
+  }
+
+  function loadUserData() {
+    const webhookUrl = `https://multi-user-trading-bot.onrender.com/webhook/${user}`;
+    document.getElementById("webhookUrl").innerText = webhookUrl;
+    document.getElementById("webhookUrlText").value = webhookUrl;
+
+    fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`)
+      .then(res => res.json())
+      .then(data => { if (data.strategy) document.getElementById("strategy").value = data.strategy });
+
+    fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          document.getElementById("cash").innerText = `$${data.cash}`;
+          document.getElementById("market_value").innerText = `$${data.market_value}`;
+          document.getElementById("equity").innerText = `$${data.equity}`;
+          document.getElementById("pnl").innerText = `$${data.pnl}`;
+        }
+      });
+
+    fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
+      .then(res => res.json())
+      .then(logs => {
+        const tbody = document.getElementById("log-body");
+        tbody.innerHTML = "";
+        if (!logs.length) {
+          tbody.innerHTML = `<tr><td colspan="5">No recent trades.</td></tr>`;
+        } else {
+          logs.forEach(log => {
+            tbody.innerHTML += `<tr><td>${log.timestamp}</td><td>${log.symbol}</td><td>${log.action}</td><td>${log.quantity}</td><td>${log.status}</td></tr>`;
+          });
+        }
+      });
+
+    fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
+      .then(res => res.json())
+      .then(suggestions => {
+        const tbody = document.getElementById("suggested-body");
+        tbody.innerHTML = "";
+        suggestions.forEach(item => {
+          tbody.innerHTML += `<tr>
+            <td>${item.symbol}</td>
+            <td>$${item.current_price}</td>
+            <td>${item.change_percent}%</td>
+            <td>${item.suggestion}</td>
+            <td><button onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Auto Trade</button></td>
+          </tr>`;
+        });
+        if (suggestions.length > 0) updateChart(suggestions[0].symbol);
+      });
+
+    fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`)
+      .then(res => res.json())
+      .then(data => {
+        const ul = document.getElementById("watchlist");
+        ul.innerHTML = "";
+        data.symbols.forEach(sym => {
+          ul.innerHTML += `<li>${sym} <button onclick="removeFromWatchlist('${sym}')">❌</button></li>`;
+        });
+      });
+
+    loadPnlChart(user);
+  }
+
+  function autoTrade(symbol, action) {
+    fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol, action, quantity: 1 })
+    })
+    .then(res => res.json())
+    .then(data => {
+      showPopup(data.message || (data.status === "success" ? "✅ Trade placed!" : "❌ Trade failed."), data.status === "success");
+      updateChart(symbol);
+      loadUserData();
+    });
+  }
+
+  function updateStrategy() {
+    const strategy = document.getElementById("strategy").value;
+    fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ strategy })
+    });
+  }
+
+  function updateChart(symbol) {
+    const frame = document.getElementById("chart-frame");
+    frame.src = `https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:${symbol}&interval=D&theme=light`;
+  }
+
+  function copyText(id) {
+    const text = document.getElementById(id).innerText || document.getElementById(id).value;
+    navigator.clipboard.writeText(text);
+    showPopup("📋 Copied to clipboard!");
+  }
+
+  function addToWatchlist() {
+    const symbol = document.getElementById("watchSymbol").value.trim().toUpperCase();
+    if (!symbol) return;
+    fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add", symbol })
+    }).then(() => loadUserData());
+  }
+
+  function removeFromWatchlist(symbol) {
+    fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove", symbol })
+    }).then(() => loadUserData());
+  }
+
+  function loadPnlChart(user) {
+    fetch(`https://multi-user-trading-bot.onrender.com/pnl/${user}`)
+      .then(res => res.json())
+      .then(pnl => {
+        const ctx = document.getElementById("pnlChart").getContext("2d");
+        new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: pnl.labels,
+            datasets: [{
+              label: "PnL Over Time",
+              data: pnl.data,
+              borderColor: "#28a745",
+              backgroundColor: "rgba(40, 167, 69, 0.1)",
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      });
+  }
+
+  function showPopup(message, success = true) {
+    const popup = document.getElementById("popup");
+    const text = document.getElementById("popup-message");
+    text.innerText = message;
+    popup.style.borderColor = success ? "#28a745" : "#dc3545";
+    popup.style.color = success ? "#28a745" : "#dc3545";
+    popup.style.display = "block";
+    setTimeout(() => popup.style.display = "none", 4000);
+  }
+
+  window.onload = loadUserData;
+</script>
+
+<div id="popup">
+  <span id="popup-message"></span>
+</div>
+
+</body>
+</html>
