@@ -6,6 +6,13 @@ import os
 import requests
 import hashlib
 from datetime import datetime
+from cryptography.fernet import Fernet
+import base64
+
+
+FERNET_SECRET = "smarthandicrafts2024"  # Must match frontend
+key = base64.urlsafe_b64encode(FERNET_SECRET.ljust(32)[:32].encode())
+fernet = Fernet(key)
 
 app = Flask(__name__)
 CORS(app)
@@ -187,6 +194,33 @@ def get_portfolio(user_id):
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/connect-alpaca", methods=["POST"])
+def connect_alpaca():
+    data = request.get_json()
+    user_id = data.get("user_id", "").strip()
+    enc_api_key = data.get("api_key", "").strip()
+    enc_secret_key = data.get("secret_key", "").strip()
+
+    if not user_id or not enc_api_key or not enc_secret_key:
+        return jsonify({"status": "error", "message": "Missing data"}), 400
+
+    try:
+        api_key = fernet.decrypt(enc_api_key.encode()).decode()
+        secret_key = fernet.decrypt(enc_secret_key.encode()).decode()
+    except Exception as e:
+        return jsonify({"status": "error", "message": "Invalid encryption"}), 400
+
+    users = load_users()
+    if user_id not in users:
+        return jsonify({"status": "error", "message": "User not found"}), 404
+
+    users[user_id]["api_key"] = api_key
+    users[user_id]["secret_key"] = secret_key
+    save_users(users)
+
+    return jsonify({"status": "success", "message": "API keys updated securely"}), 200
+
 
 @app.route("/strategy/<user_id>", methods=["GET", "POST"])
 def strategy_handler(user_id):
