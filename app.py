@@ -7,12 +7,11 @@ import requests
 import hashlib
 from datetime import datetime
 from cryptography.fernet import Fernet
-import base64
 
 fernet = Fernet(os.environ["FERNET_KEY"])
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 def load_users():
     if os.path.exists("users.json"):
@@ -79,13 +78,38 @@ def login_user():
     if user_id not in users:
         return jsonify({"status": "error", "message": "User not found."}), 404
 
-    # 🛡️ Hash the incoming password before checking
     hashed_pw = hashlib.sha256(password.encode()).hexdigest()
     if users[user_id].get("password") != hashed_pw:
         return jsonify({"status": "error", "message": "Incorrect password."}), 401
 
     return jsonify({"status": "success", "message": "Login successful."}), 200
-    
+
+@app.route("/connect-alpaca", methods=["POST"])
+def connect_alpaca():
+    data = request.get_json()
+    user_id = data.get("user_id", "").strip()
+    api_key = data.get("api_key", "").strip()
+    secret_key = data.get("secret_key", "").strip()
+
+    if not user_id or not api_key or not secret_key:
+        return jsonify({"status": "error", "message": "Missing data"}), 400
+
+    try:
+        enc_api_key = fernet.encrypt(api_key.encode()).decode()
+        enc_secret_key = fernet.encrypt(secret_key.encode()).decode()
+    except:
+        return jsonify({"status": "error", "message": "Encryption failed"}), 500
+
+    users = load_users()
+    if user_id not in users:
+        return jsonify({"status": "error", "message": "User not found"}), 404
+
+    users[user_id]["api_key"] = enc_api_key
+    users[user_id]["secret_key"] = enc_secret_key
+    save_users(users)
+
+    return jsonify({"status": "success", "message": "API keys saved securely"}), 200
+
 @app.route("/webhook/<user_id>", methods=["POST"])
 def webhook(user_id):
     users = load_users()
@@ -93,7 +117,6 @@ def webhook(user_id):
         return jsonify({"status": "error", "message": "Invalid user"}), 404
     user = users[user_id]
     data = request.get_json()
-    print(f"📩 [{user_id}] Webhook received:", data)
     symbol = data.get("symbol")
     action = data.get("action")
     quantity = int(data.get("quantity", 1))
@@ -103,13 +126,13 @@ def webhook(user_id):
     try:
         api_key = fernet.decrypt(user["api_key"].encode()).decode()
         secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
-    except Exception:
-        return jsonify({"status": "error", "message": "Decryption failed. Please reconnect Alpaca API."}), 500
+
         api = tradeapi.REST(
             key_id=api_key,
             secret_key=secret_key,
             base_url="https://paper-api.alpaca.markets"
         )
+
         if action.lower() == "sell":
             try:
                 position = api.get_position(symbol)
@@ -117,9 +140,7 @@ def webhook(user_id):
             except:
                 held_qty = 0
             if held_qty < quantity:
-                msg = f"❌ Not enough quantity to sell: You have {held_qty}, trying to sell {quantity}."
-                print(f"[{user_id}] {msg}")
-                return jsonify({"status": "error", "message": msg}), 400
+                return jsonify({"status": "error", "message": f"Not enough quantity to sell: You have {held_qty}"}), 400
 
         order = api.submit_order(
             symbol=symbol,
@@ -138,11 +159,9 @@ def webhook(user_id):
             "status": "✅",
             "price": price
         })
-        print(f"✅ [{user_id}] Order placed: {symbol} {action.upper()} x{quantity}")
         return jsonify({"status": "success", "order_id": order.id}), 200
 
     except Exception as e:
-        error_message = str(e)
         log_trade(user_id, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
@@ -150,25 +169,7 @@ def webhook(user_id):
             "quantity": quantity,
             "status": "❌"
         })
-
-        if "float()" in error_message and "NoneType" in error_message:
-            error_message = "Trade failed: Price information is not available yet. Please try again in a few seconds."
-        elif "qty" in error_message.lower():
-            error_message = "Trade failed: Invalid quantity or not enough holdings to sell."
-        elif "symbol" in error_message.lower():
-            error_message = "Trade failed: Invalid or unsupported stock symbol."
-        else:
-            error_message = "Trade failed due to an unexpected issue. Please try again."
-        print(f"❌ [{user_id}] Order failed:", error_message)
-        return jsonify({"status": "error", "message": error_message}), 500
-
-@app.route("/logs/<user_id>", methods=["GET"])
-def get_logs(user_id):
-    log_file = f"logs/{user_id}.json"
-    if os.path.exists(log_file):
-        with open(log_file, "r") as f:
-            return jsonify(json.load(f))
-    return jsonify([])
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/portfolio/<user_id>", methods=["GET"])
 def get_portfolio(user_id):
@@ -179,19 +180,20 @@ def get_portfolio(user_id):
     try:
         api_key = fernet.decrypt(user["api_key"].encode()).decode()
         secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
-    except Exception:
-        return jsonify({"status": "error", "message": "Decryption failed. Please reconnect Alpaca API."}), 500
+
         api = tradeapi.REST(
             key_id=api_key,
             secret_key=secret_key,
             base_url="https://paper-api.alpaca.markets"
         )
+
         account = api.get_account()
         positions = api.list_positions()
         cash = float(account.cash)
         equity = float(account.equity)
         market_value = sum([float(p.market_value) for p in positions])
         pnl = equity - cash
+
         return jsonify({
             "cash": round(cash, 2),
             "equity": round(equity, 2),
@@ -202,33 +204,6 @@ def get_portfolio(user_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route("/connect-alpaca", methods=["POST"])
-def connect_alpaca():
-    data = request.get_json()
-    user_id = data.get("user_id", "").strip()
-    api_key = data.get("api_key", "").strip()
-    secret_key = data.get("secret_key", "").strip()
-
-    if not user_id or not api_key or not secret_key:
-        return jsonify({"status": "error", "message": "Missing data"}), 400
-
-    try:
-        enc_api_key = fernet.encrypt(api_key.encode()).decode()
-        enc_secret_key = fernet.encrypt(secret_key.encode()).decode()
-    except Exception as e:
-        return jsonify({"status": "error", "message": "Encryption failed"}), 500
-
-    users = load_users()
-    if user_id not in users:
-        return jsonify({"status": "error", "message": "User not found"}), 404
-
-    users[user_id]["api_key"] = enc_api_key
-    users[user_id]["secret_key"] = enc_secret_key
-    save_users(users)
-
-    return jsonify({"status": "success", "message": "API keys saved securely"}), 200
-
-
 @app.route("/strategy/<user_id>", methods=["GET", "POST"])
 def strategy_handler(user_id):
     users = load_users()
@@ -236,11 +211,10 @@ def strategy_handler(user_id):
         return jsonify({"status": "error", "message": "Invalid user"}), 404
     if request.method == "GET":
         return jsonify({"strategy": users[user_id].get("strategy", "balanced")})
-    if request.method == "POST":
-        data = request.get_json()
-        users[user_id]["strategy"] = data.get("strategy", "balanced")
-        save_users(users)
-        return jsonify({"status": "success", "message": "Strategy updated"})
+    data = request.get_json()
+    users[user_id]["strategy"] = data.get("strategy", "balanced")
+    save_users(users)
+    return jsonify({"status": "success", "message": "Strategy updated"})
 
 @app.route("/watchlist/<user_id>", methods=["GET", "POST"])
 def watchlist_handler(user_id):
@@ -266,21 +240,22 @@ def suggested_symbols(user_id):
     users = load_users()
     if user_id not in users:
         return jsonify({"status": "error", "message": "Invalid user"}), 404
+
     TD_API_KEY = "732be95d470647be80419085887d2606"
-    user = users[user_id]
-    strategy = user.get("strategy", "balanced")
-    symbols = user.get("watchlist", []) or ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]
+    strategy = users[user_id].get("strategy", "balanced")
+    symbols = users[user_id].get("watchlist", []) or ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]
+
     suggestions = []
-    for symbol in symbols[:50]:
+    for symbol in symbols:
         try:
             url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&outputsize=2&apikey={TD_API_KEY}"
-            res = requests.get(url)
-            data = res.json()
-            if "values" not in data or len(data["values"]) < 2:
+            res = requests.get(url).json()
+            if "values" not in res or len(res["values"]) < 2:
                 continue
-            today = float(data["values"][0]["close"])
-            yesterday = float(data["values"][1]["close"])
+            today = float(res["values"][0]["close"])
+            yesterday = float(res["values"][1]["close"])
             change = round(((today - yesterday) / yesterday) * 100, 2)
+
             suggestion = "Hold"
             if strategy == "balanced":
                 if change < -1.5:
@@ -294,6 +269,7 @@ def suggested_symbols(user_id):
                     suggestion = "Buy"
                 elif change > 2:
                     suggestion = "Sell"
+
             suggestions.append({
                 "symbol": symbol,
                 "current_price": today,
@@ -302,6 +278,7 @@ def suggested_symbols(user_id):
             })
         except:
             continue
+
     top5 = sorted(suggestions, key=lambda x: abs(x["change_percent"]), reverse=True)[:5]
     return jsonify(top5), 200
 
@@ -313,6 +290,7 @@ def get_pnl_chart(user_id):
     try:
         with open(log_file, "r") as f:
             logs = json.load(f)
+
         pnl_by_day = {}
         for log in logs:
             if log.get("status") != "✅":
@@ -324,8 +302,9 @@ def get_pnl_chart(user_id):
             if log.get("action", "").lower() == "buy":
                 pnl *= -1
             pnl_by_day[date] = pnl_by_day.get(date, 0) + pnl
+
         labels = sorted(pnl_by_day.keys())
-        data = [round(pnl_by_day[day], 2) for day in labels]
+        data = [round(pnl_by_day[d], 2) for d in labels]
         return jsonify({"labels": labels, "data": data})
     except Exception as e:
         return jsonify({"labels": [], "data": [], "error": str(e)})
