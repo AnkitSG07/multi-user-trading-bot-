@@ -2,3 +2,4 @@ Flask
 alpaca-trade-api
 gunicorn
 flask-cors
+cryptography
