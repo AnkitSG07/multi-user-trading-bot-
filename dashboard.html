@@ -143,39 +143,31 @@
     color: white;
   }
 
-    #watchlist-tags {
-    margin-top: 0.5rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
+ #watchlistTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 
-  .tag {
-    background-color: #007bff;
-    color: white;
-    padding: 0.4rem 0.8rem;
-    border-radius: 999px;
-    display: flex;
-    align-items: center;
-    font-size: 0.9rem;
-  }
+.watchlist-badge {
+  display: flex;
+  align-items: center;
+  background-color: #007bff;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  position: relative;
+}
 
-  .tag button {
-    background: none;
-    border: none;
-    color: white;
-    margin-left: 0.5rem;
-    cursor: pointer;
-    font-weight: bold;
-  }
-
-  select {
-    padding: 0.6rem;
-    border-radius: 5px;
-    margin-top: 0.5rem;
-    width: 100%;
-  }
-
+.watchlist-badge button {
+  background: transparent;
+  border: none;
+  color: white;
+  margin-left: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
   @media (max-width: 768px) {
     body {
       padding: 1rem;
@@ -217,17 +209,12 @@
 
 <div class="box">
   <strong>📋 Custom Watchlist</strong>
-  <div id="watchlist-tags"></div>
-  
-  <select id="watchSymbolDropdown">
-    <option value="">-- Select Symbol --</option>
-    <option value="AAPL">AAPL</option>
-    <option value="TSLA">TSLA</option>
-    <option value="MSFT">MSFT</option>
-    <option value="GOOG">GOOG</option>
-    <option value="AMZN">AMZN</option>
-  </select>
-  <button onclick="addToWatchlist()">➕ Add</button>
+  <div style="margin-bottom: 1rem;">
+    <input type="text" id="watchSymbol" placeholder="Search stock symbol..." oninput="autocompleteSearch()" list="symbolList" />
+    <datalist id="symbolList"></datalist>
+    <button onclick="addToWatchlist()">➕ Add</button>
+  </div>
+  <div id="watchlistTags"></div>
 </div>
   
 <div class="box">
@@ -432,8 +419,27 @@
     showPopup("📋 Copied to clipboard!");
   }
 
+function autocompleteSearch() {
+  const query = document.getElementById("watchSymbol").value.trim();
+  if (query.length < 2) return;
+
+  fetch(`https://api.twelvedata.com/symbol_search?symbol=${query}&apikey=732be95d470647be80419085887d2606`)
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById("symbolList");
+      list.innerHTML = "";
+      if (data.data) {
+        data.data.slice(0, 10).forEach(item => {
+          const option = document.createElement("option");
+          option.value = item.symbol;
+          list.appendChild(option);
+        });
+      }
+    });
+}
+
 function addToWatchlist() {
-  const symbol = document.getElementById("watchSymbolDropdown").value;
+  const symbol = document.getElementById("watchSymbol").value.trim().toUpperCase();
   if (!symbol) return;
 
   fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
@@ -451,17 +457,17 @@ function removeFromWatchlist(symbol) {
   }).then(() => loadUserData());
 }
 
-// inside loadUserData()
+// Modify your existing part inside loadUserData() for watchlist
 fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`)
   .then(res => res.json())
   .then(data => {
-    const container = document.getElementById("watchlist-tags");
+    const container = document.getElementById("watchlistTags");
     container.innerHTML = "";
     data.symbols.forEach(sym => {
-      const tag = document.createElement("div");
-      tag.className = "tag";
-      tag.innerHTML = `${sym} <button onclick="removeFromWatchlist('${sym}')">×</button>`;
-      container.appendChild(tag);
+      const badge = document.createElement("div");
+      badge.className = "watchlist-badge";
+      badge.innerHTML = `${sym} <button onclick="removeFromWatchlist('${sym}')">×</button>`;
+      container.appendChild(badge);
     });
   });
 
