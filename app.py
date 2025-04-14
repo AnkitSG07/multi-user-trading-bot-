@@ -79,11 +79,13 @@ def login_user():
     if user_id not in users:
         return jsonify({"status": "error", "message": "User not found."}), 404
 
-    if users[user_id].get("password") != password:
+    # 🛡️ Hash the incoming password before checking
+    hashed_pw = hashlib.sha256(password.encode()).hexdigest()
+    if users[user_id].get("password") != hashed_pw:
         return jsonify({"status": "error", "message": "Incorrect password."}), 401
 
     return jsonify({"status": "success", "message": "Login successful."}), 200
-
+    
 @app.route("/webhook/<user_id>", methods=["POST"])
 def webhook(user_id):
     users = load_users()
