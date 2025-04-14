@@ -65,7 +65,8 @@
     <input type="text" id="mobile" placeholder="📇 Mobile Number" />
     <input type="text" id="username" placeholder="👥 Choose Username" />
     <input type="password" id="password" placeholder="🔒 Password" />
-    
+
+    <!-- Captcha (static for now) -->
     <img src="https://dummyimage.com/300x80/ffffff/007bff&text=XnAW3" alt="CAPTCHA" class="captcha-img" />
     <input type="text" id="captcha" placeholder="🔐 Enter Captcha" />
 
@@ -82,21 +83,23 @@
       const captcha = document.getElementById("captcha").value.trim();
 
       if (!name || !email || !mobile || !username || !password || !captcha) {
-        alert("❌ Please fill all the fields correctly.");
+        alert("❌ Please fill all fields correctly.");
         return;
       }
 
-      // Sample submission to backend API (adjust the URL as needed)
+      // ✅ Optional: check CAPTCHA
+      if (captcha.toLowerCase() !== "xnaw3") {
+        alert("❌ Invalid captcha");
+        return;
+      }
+
+      // ✅ POST request to backend
       fetch("https://multi-user-trading-bot.onrender.com/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          email,
-          mobile,
           user_id: username,
-          password,
-          captcha
+          password: password
         })
       })
       .then(res => res.json())
@@ -105,10 +108,12 @@
           alert("✅ Signup successful! You can now login.");
           window.location.href = "login.html";
         } else {
-          alert("❌ " + (data.message || "Signup failed."));
+          alert("❌ " + (data.message || "Signup failed"));
         }
       })
-      .catch(() => alert("❌ Network error. Please try again later."));
+      .catch(() => {
+        alert("❌ Network error. Please try again later.");
+      });
     }
   </script>
 
