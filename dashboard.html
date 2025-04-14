@@ -179,7 +179,16 @@
   <canvas id="pnlChart"></canvas>
 </div>
 
+<div class="box">
+  <strong>🔐 Connect Alpaca API</strong>
+  <input type="text" id="alpacaKey" placeholder="Enter Alpaca API Key">
+  <input type="text" id="alpacaSecret" placeholder="Enter Secret Key">
+  <button onclick="connectAlpaca()">🔄 Connect</button>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
+  
 <script>
   let user = "";
 
@@ -355,8 +364,40 @@
     popup.style.display = "block";
     setTimeout(() => popup.style.display = "none", 4000);
   }
-</script>
 
+  function connectAlpaca() {
+    const apiKey = document.getElementById("alpacaKey").value.trim();
+    const secretKey = document.getElementById("alpacaSecret").value.trim();
+    if (!apiKey || !secretKey) {
+      showPopup("❌ API Key and Secret Key are required", false);
+      return;
+    }
+
+    const ENCRYPTION_SECRET = "smarthandicrafts2024"; // CHANGE THIS and keep it same in app.py
+    const encryptedKey = CryptoJS.AES.encrypt(apiKey, ENCRYPTION_SECRET).toString();
+    const encryptedSecret = CryptoJS.AES.encrypt(secretKey, ENCRYPTION_SECRET).toString();
+
+    fetch(`https://multi-user-trading-bot.onrender.com/connect-alpaca`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: user,
+        api_key: encryptedKey,
+        secret_key: encryptedSecret
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === "success") {
+        showPopup("✅ API Connected Successfully!");
+      } else {
+        showPopup("❌ " + (data.message || "Connection failed"), false);
+      }
+    })
+    .catch(() => showPopup("❌ Network error", false));
+  }
+  
+</script>
 <div id="popup"><span id="popup-message"></span></div>
 
 </body>
