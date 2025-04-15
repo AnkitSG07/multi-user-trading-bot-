@@ -163,10 +163,11 @@ def connect_alpaca():
         return jsonify({"status": "error", "message": "Missing data"}), 400
 
     try:
+        # Encrypt using Fernet here on backend
         enc_api_key = fernet.encrypt(api_key.encode()).decode()
         enc_secret_key = fernet.encrypt(secret_key.encode()).decode()
-    except:
-        return jsonify({"status": "error", "message": "Encryption failed"}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "message": "Encryption failed: " + str(e)}), 500
 
     users = load_users()
     if user_id not in users:
