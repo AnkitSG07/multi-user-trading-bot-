@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Safe Mode Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      color: #333;
+      padding: 2rem;
+    }
+    h1 {
+      color: #007bff;
+    }
+    #log {
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 1rem;
+      margin-top: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+    }
+    .success { color: green; }
+    .fail { color: red; }
+  </style>
+</head>
+<body>
+  <h1>🤖 Safe Mode Bot</h1>
+  <p>This bot will auto-trade every 60 seconds and only execute high-probability profitable trades.</p>
+  <div id="log">Starting bot...</div>
+
+  <script>
+    const user = localStorage.getItem("userId");
+    const baseURL = "https://multi-user-trading-bot.onrender.com";
+
+    if (!user) {
+      document.getElementById("log").innerHTML = "❌ Please log in first.";
+      throw new Error("No userId found.");
+    }
+
+    async function tradeSafeBot() {
+      logMessage("🔁 Checking suggestions...");
+
+      try {
+        const res = await fetch(`${baseURL}/suggested/${user}`);
+        const suggestions = await res.json();
+
+        for (const item of suggestions) {
+          const { symbol, suggestion, current_price, change_percent } = item;
+
+          if (suggestion.toLowerCase() === "buy" || suggestion.toLowerCase() === "sell") {
+            const tradeRes = await fetch(`${baseURL}/webhook/${user}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ symbol, action: suggestion.toLowerCase(), quantity: 1 })
+            });
+            const data = await tradeRes.json();
+
+            if (data.status === "success") {
+              logMessage(`✅ ${suggestion} ${symbol} @ $${current_price} (Change: ${change_percent}%)`, true);
+            } else {
+              logMessage(`❌ Failed to ${suggestion} ${symbol}: ${data.message || "Unknown error"}`, false);
+            }
+          } else {
+            logMessage(`⏸️ Holding ${symbol} (Change: ${change_percent}%)`);
+          }
+        }
+      } catch (err) {
+        logMessage("❌ Network or server error. " + err.message, false);
+      }
+    }
+
+    function logMessage(message, success = null) {
+      const logDiv = document.getElementById("log");
+      const time = new Date().toLocaleTimeString();
+      const p = document.createElement("p");
+      p.innerHTML = `[${time}] ${message}`;
+      if (success === true) p.classList.add("success");
+      else if (success === false) p.classList.add("fail");
+      logDiv.prepend(p);
+    }
+
+    // Initial trigger and repeat every 60 seconds
+    tradeSafeBot();
+    setInterval(tradeSafeBot, 60000);
+  </script>
+</body>
+</html>
