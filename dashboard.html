@@ -529,33 +529,34 @@
     setTimeout(() => popup.style.display = "none", 4000);
   }
 
-  function connectAlpaca() {
-    const apiKey = document.getElementById("alpacaKey").value.trim();
-    const secretKey = document.getElementById("alpacaSecret").value.trim();
-    if (!apiKey || !secretKey) {
-      showPopup("❌ API Key and Secret Key are required", false);
-      return;
-    }
-    
-    fetch(`https://multi-user-trading-bot.onrender.com/connect-alpaca`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: user,
-        api_key: apiKey,
-        secret_key: secretkey
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === "success") {
-        showPopup("✅ API Connected Successfully!");
-      } else {
-        showPopup("❌ " + (data.message || "Connection failed"), false);
-      }
-    })
-    .catch(() => showPopup("❌ Network error", false));
+function connectAlpaca() {
+  const apiKey = document.getElementById("alpacaKey").value.trim();
+  const secretKey = document.getElementById("alpacaSecret").value.trim(); // ✅ NOT "secretkey"
+  if (!apiKey || !secretKey) {
+    showPopup("❌ API Key and Secret Key are required", false);
+    return;
   }
+
+  fetch(`https://multi-user-trading-bot.onrender.com/connect-alpaca`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: user,
+      api_key: apiKey,
+      secret_key: secretKey
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === "success") {
+      showPopup("✅ API Connected Successfully!");
+    } else {
+      showPopup("❌ " + (data.message || "Connection failed"), false);
+    }
+  })
+  .catch(() => showPopup("❌ Network error", false));
+}
+
 </script>
   
 <div id="popup"><span id="popup-message"></span></div>
