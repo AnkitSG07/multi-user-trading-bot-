@@ -183,58 +183,50 @@ def webhook(user_id):
     users = load_users()
     if user_id not in users:
         return jsonify({"status": "error", "message": "Invalid user"}), 404
-    user = users[user_id]
 
+    user = users[user_id]
     data = request.get_json()
     symbol = data.get("symbol")
     action = data.get("action")
     quantity = int(data.get("quantity", 1))
 
     if not symbol or not action:
-        return jsonify({"status": "error", "message": "❌ Missing symbol or action"}), 400
+        return jsonify({"status": "error", "message": "Missing data"}), 400
 
-    # 🔐 Try decrypting API keys
     try:
         api_key = fernet.decrypt(user["api_key"].encode()).decode()
         secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"❌ Decryption failed: {str(e)}"}), 500
 
-    try:
-        api = tradeapi.REST(api_key, secret_key, base_url="https://paper-api.alpaca.markets")
+        api = tradeapi.REST(
+            key_id=api_key,
+            secret_key=secret_key,
+            base_url="https://paper-api.alpaca.markets"
+        )
 
-        # 🧾 Sell position check
+        # 🔁 New fallback logic to get position
+        held_qty = 0
         if action.lower() == "sell":
             try:
-                position = api.get_position(symbol)
-                held_qty = int(float(position.qty_available))
-                if held_qty < quantity:
-                    return jsonify({
-                        "status": "error",
-                        "message": f"❌ Not enough quantity to sell: You have {held_qty}, trying to sell {quantity}."
-                    }), 400
+                positions = api.list_positions()
+                position = next((p for p in positions if p.symbol == symbol), None)
+                if position:
+                    held_qty = int(float(position.qty_available))
             except Exception as e:
-                return jsonify({
-                    "status": "error",
-                    "message": f"❌ Failed to fetch position: {str(e)}"
-                }), 500
+                error_message = f"Failed to fetch position: {str(e)}"
+                return jsonify({"status": "error", "message": error_message}), 500
 
-        # ✅ Submit the order
-        try:
-            order = api.submit_order(
-                symbol=symbol,
-                qty=quantity,
-                side=action.lower(),
-                type="market",
-                time_in_force="gtc"
-            )
-        except Exception as e:
-            return jsonify({"status": "error", "message": f"❌ Order failed: {str(e)}"}), 500
+            if held_qty < quantity:
+                return jsonify({"status": "error", "message": f"Not enough quantity to sell: You have {held_qty}"}), 400
 
-        # 🧾 Get filled price if available
+        order = api.submit_order(
+            symbol=symbol,
+            qty=quantity,
+            side=action.lower(),
+            type="market",
+            time_in_force="gtc"
+        )
+
         price = float(order.filled_avg_price) if order.filled_avg_price else 0.0
-
-        # ✅ Log trade
         log_trade(user_id, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
@@ -243,18 +235,20 @@ def webhook(user_id):
             "status": "✅",
             "price": price
         })
-
         return jsonify({"status": "success", "order_id": order.id}), 200
 
     except Exception as e:
+        error_message = str(e)
         log_trade(user_id, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
             "action": action.capitalize(),
             "quantity": quantity,
-            "status": "❌"
+            "status": "❌",
+            "error": error_message
         })
-        return jsonify({"status": "error", "message": f"❌ Unexpected server error: {str(e)}"}), 500
+        return jsonify({"status": "error", "message": f"❌ {error_message}"}), 500
+
 
 
 
