@@ -1,8 +1,8 @@
 {
   "ankit123": {
     "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
-    "api_key": "gAAAAABlW2nDFZCk9IdoU8OoyNg05dof13cDGRXHqfXpN3VG9PKQ0nM49UkTiYb3kq8MZtw4PbZkCCFvq0z10b",
-    "secret_key": "gAAAAABlW2nDA5o0PPb0ZzXLCcWv2rfmtE6kUIfVEvGEMCIMfyBsfzyChN6YcpC2Kg2v8b2EdAaO8fnhUMhm",
+    "api_key": "",
+    "secret_key": "",
     "broker": "alpaca",
     "strategy": "balanced",
     "watchlist": ["AAPL", "TSLA", "MSFT"]
