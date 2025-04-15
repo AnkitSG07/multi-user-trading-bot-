@@ -183,54 +183,58 @@ def webhook(user_id):
     users = load_users()
     if user_id not in users:
         return jsonify({"status": "error", "message": "Invalid user"}), 404
-
     user = users[user_id]
+
     data = request.get_json()
     symbol = data.get("symbol")
     action = data.get("action")
     quantity = int(data.get("quantity", 1))
 
-    print(f"[{user_id}] 🔔 Webhook received: {symbol}, {action}, Qty: {quantity}")
-
     if not symbol or not action:
-        return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
+        return jsonify({"status": "error", "message": "❌ Missing symbol or action"}), 400
 
+    # 🔐 Try decrypting API keys
     try:
-        # ✅ Decrypt Alpaca keys
         api_key = fernet.decrypt(user["api_key"].encode()).decode()
         secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"❌ Decryption failed: {str(e)}"}), 500
 
-        # ✅ Initialize Alpaca API
-        api = tradeapi.REST(
-            key_id=api_key,
-            secret_key=secret_key,
-            base_url="https://paper-api.alpaca.markets"
-        )
+    try:
+        api = tradeapi.REST(api_key, secret_key, base_url="https://paper-api.alpaca.markets")
 
-        # ✅ Check quantity for Sell
+        # 🧾 Sell position check
         if action.lower() == "sell":
             try:
                 position = api.get_position(symbol)
                 held_qty = int(float(position.qty_available))
                 if held_qty < quantity:
-                    msg = f"❌ Not enough quantity to sell: You have {held_qty}, trying to sell {quantity}"
-                    print(f"[{user_id}] {msg}")
-                    return jsonify({"status": "error", "message": msg}), 400
+                    return jsonify({
+                        "status": "error",
+                        "message": f"❌ Not enough quantity to sell: You have {held_qty}, trying to sell {quantity}."
+                    }), 400
             except Exception as e:
-                print(f"[{user_id}] ⚠️ Error checking position: {e}")
-                return jsonify({"status": "error", "message": "Failed to verify holdings"}), 400
+                return jsonify({
+                    "status": "error",
+                    "message": f"❌ Failed to fetch position: {str(e)}"
+                }), 500
 
-        # ✅ Submit Order
-        order = api.submit_order(
-            symbol=symbol,
-            qty=quantity,
-            side=action.lower(),
-            type="market",
-            time_in_force="gtc"
-        )
+        # ✅ Submit the order
+        try:
+            order = api.submit_order(
+                symbol=symbol,
+                qty=quantity,
+                side=action.lower(),
+                type="market",
+                time_in_force="gtc"
+            )
+        except Exception as e:
+            return jsonify({"status": "error", "message": f"❌ Order failed: {str(e)}"}), 500
 
-        # ✅ Log Success
+        # 🧾 Get filled price if available
         price = float(order.filled_avg_price) if order.filled_avg_price else 0.0
+
+        # ✅ Log trade
         log_trade(user_id, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
@@ -240,13 +244,9 @@ def webhook(user_id):
             "price": price
         })
 
-        print(f"[{user_id}] ✅ Order placed: {symbol} {action.upper()} x{quantity} at ${price}")
         return jsonify({"status": "success", "order_id": order.id}), 200
 
     except Exception as e:
-        # 🔴 Log error for diagnostics
-        print(f"[{user_id}] ❌ Webhook failed: {str(e)}")
-
         log_trade(user_id, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
@@ -254,11 +254,8 @@ def webhook(user_id):
             "quantity": quantity,
             "status": "❌"
         })
+        return jsonify({"status": "error", "message": f"❌ Unexpected server error: {str(e)}"}), 500
 
-        return jsonify({
-            "status": "error",
-            "message": f"Webhook failed: {str(e)}"
-        }), 500
 
 
 @app.route("/portfolio/<user_id>", methods=["GET"])
