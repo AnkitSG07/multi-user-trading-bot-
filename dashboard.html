@@ -536,18 +536,14 @@
       showPopup("❌ API Key and Secret Key are required", false);
       return;
     }
-
-    const ENCRYPTION_SECRET = "smarthandicrafts2024";
-    const encryptedKey = CryptoJS.AES.encrypt(apiKey, ENCRYPTION_SECRET).toString();
-    const encryptedSecret = CryptoJS.AES.encrypt(secretKey, ENCRYPTION_SECRET).toString();
-
+    
     fetch(`https://multi-user-trading-bot.onrender.com/connect-alpaca`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user_id: user,
-        api_key: encryptedKey,
-        secret_key: encryptedSecret
+        api_key: apiKey,
+        secret_key: secretkey
       })
     })
     .then(res => res.json())
