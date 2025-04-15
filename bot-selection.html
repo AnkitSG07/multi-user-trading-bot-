@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Select a Trading Bot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f4f4;
+      padding: 2rem;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .bot-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin: 1rem auto;
+      max-width: 600px;
+    }
+    .bot-card h2 {
+      margin: 0;
+    }
+    .bot-card p {
+      margin: 0.5rem 0 1rem;
+    }
+    .start-btn {
+      background: #007bff;
+      color: white;
+      padding: 0.7rem 1.2rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .start-btn:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🤖 Choose Your Trading Bot</h1>
+
+<div class="bot-card">
+  <h2>Safe Mode Bot</h2>
+  <p>Only trades when high probability of profit is detected. No risky trades.</p>
+  <button class="start-btn" onclick="startBot('safe-bot.html')">Start Trading</button>
+</div>
+
+<div class="bot-card">
+  <h2>Aggressive Bot</h2>
+  <p>Trades on quick market movements for fast returns. High risk, high reward.</p>
+  <button class="start-btn" onclick="startBot('aggressive-bot.html')">Start Trading</button>
+</div>
+
+<div class="bot-card">
+  <h2>Volume Spike Bot</h2>
+  <p>Buys and sells based on unusual volume activity in the market.</p>
+  <button class="start-btn" onclick="startBot('volume-bot.html')">Start Trading</button>
+</div>
+
+<div class="bot-card">
+  <h2>Reversal Pattern Bot</h2>
+  <p>Targets price reversals with confirmation signals for trades.</p>
+  <button class="start-btn" onclick="startBot('reversal-bot.html')">Start Trading</button>
+</div>
+
+<div class="bot-card">
+  <h2>Momentum Rider Bot</h2>
+  <p>Rides trending stocks with strong upward or downward momentum.</p>
+  <button class="start-btn" onclick="startBot('momentum-bot.html')">Start Trading</button>
+</div>
+
+<script>
+  function startBot(botFile) {
+    window.open(botFile, '_blank');
+  }
+</script>
+
+</body>
+</html>
