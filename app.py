@@ -37,6 +37,74 @@ def log_trade(user_id, log_data):
     with open(log_file, "w") as f:
         json.dump(logs, f, indent=2)
 
+@app.route("/safe-bot/<user_id>", methods=["POST"])
+def safe_bot(user_id):
+    users = load_users()
+    if user_id not in users:
+        return jsonify({"status": "error", "message": "User not found"}), 404
+
+    try:
+        api_key = fernet.decrypt(users[user_id]["api_key"].encode()).decode()
+        secret_key = fernet.decrypt(users[user_id]["secret_key"].encode()).decode()
+    except:
+        return jsonify({"status": "error", "message": "Decryption failed"}), 500
+
+    api = tradeapi.REST(api_key, secret_key, base_url="https://paper-api.alpaca.markets")
+    strategy = users[user_id].get("strategy", "balanced")
+    symbols = users[user_id].get("watchlist", []) or ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]
+
+    TD_API_KEY = "732be95d470647be80419085887d2606"
+    actions = []
+
+    for symbol in symbols:
+        try:
+            url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&outputsize=2&apikey={TD_API_KEY}"
+            res = requests.get(url).json()
+            if "values" not in res or len(res["values"]) < 2:
+                continue
+
+            today = float(res["values"][0]["close"])
+            yesterday = float(res["values"][1]["close"])
+            change = round(((today - yesterday) / yesterday) * 100, 2)
+
+            # ✅ Safe Buy
+            if change < -2:
+                api.submit_order(symbol=symbol, qty=1, side="buy", type="market", time_in_force="gtc")
+                log_trade(user_id, {
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "symbol": symbol,
+                    "action": "Buy",
+                    "quantity": 1,
+                    "status": "✅",
+                    "price": today
+                })
+                actions.append(f"✅ Bought 1 {symbol} at ${today}")
+
+            # ✅ Safe Sell
+            elif change > 2:
+                try:
+                    position = api.get_position(symbol)
+                    qty = int(float(position.qty_available))
+                    if qty > 0:
+                        api.submit_order(symbol=symbol, qty=1, side="sell", type="market", time_in_force="gtc")
+                        log_trade(user_id, {
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "symbol": symbol,
+                            "action": "Sell",
+                            "quantity": 1,
+                            "status": "✅",
+                            "price": today
+                        })
+                        actions.append(f"✅ Sold 1 {symbol} at ${today}")
+                except:
+                    pass  # No position to sell
+
+        except Exception as e:
+            actions.append(f"❌ {symbol}: {str(e)}")
+
+    return jsonify({"status": "done", "actions": actions})
+
+
 @app.route("/")
 def home():
     return '<script>window.location.href="/login.html";</script>'
