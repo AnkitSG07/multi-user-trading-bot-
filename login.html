@@ -4,79 +4,126 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login - Trading Bot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      background: linear-gradient(to bottom, #000033, #001f5c);
-      font-family: 'Segoe UI', sans-serif;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
     }
-    h2 {
+
+    body {
+      background: linear-gradient(135deg, #0a0a0a, #1c1c1c);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .login-container {
+      background: #121212;
+      padding: 3rem 2rem;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+      max-width: 400px;
+      width: 90%;
+      transition: 0.3s ease;
+    }
+
+    .login-container h2 {
+      text-align: center;
       margin-bottom: 2rem;
       font-size: 2rem;
+      font-weight: 600;
+      color: #ffffff;
     }
-    .login-container {
-      width: 100%;
-      max-width: 400px;
-      background-color: rgba(255, 255, 255, 0.05);
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.2);
-    }
+
     .input-group {
       display: flex;
       align-items: center;
-      background: #eee;
-      border-radius: 2rem;
-      padding: 0.8rem 1.2rem;
-      margin-bottom: 1rem;
+      background: #1e1e1e;
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 1.2rem;
+      transition: 0.3s ease;
     }
+
     .input-group i {
       margin-right: 0.8rem;
-      color: #555;
+      color: #888;
+      font-size: 1.1rem;
     }
+
     .input-group input {
       border: none;
       background: transparent;
       outline: none;
       font-size: 1rem;
+      color: #fff;
       width: 100%;
-      color: #333;
     }
+
+    .input-group input::placeholder {
+      color: #777;
+    }
+
     .login-btn {
-      background: #2ecc71;
+      background: linear-gradient(135deg, #3a86ff, #8338ec);
       border: none;
       width: 100%;
       padding: 1rem;
-      border-radius: 2rem;
+      border-radius: 14px;
       color: white;
       font-size: 1rem;
       font-weight: bold;
       cursor: pointer;
       margin-top: 1rem;
+      transition: 0.3s ease;
     }
+
     .login-btn:hover {
-      background: #27ae60;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(131, 56, 236, 0.4);
     }
+
     .link {
       text-align: center;
-      margin-top: 1rem;
+      margin-top: 1.5rem;
       font-size: 0.9rem;
+      color: #ccc;
     }
+
     .link a {
-      color: #00acee;
+      color: #3a86ff;
       text-decoration: none;
+      margin: 0.3rem 0;
+      display: inline-block;
+    }
+
+    .link a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 2rem 1.2rem;
+      }
+
+      .login-container h2 {
+        font-size: 1.6rem;
+      }
+
+      .login-btn {
+        font-size: 0.95rem;
+      }
     }
   </style>
 </head>
 <body>
   <div class="login-container">
-    <h2>Login</h2>
+    <h2>Welcome Back</h2>
     <div class="input-group">
       <i>👤</i>
       <input type="text" id="username" placeholder="User Name" />
@@ -88,38 +135,38 @@
     <button class="login-btn" onclick="login()">LOGIN</button>
     <div class="link">
       <a href="#">Forgot Username or Password?</a><br>
-      <a href="signup.html">Create Profile →</a>
+      <a href="signup.html">New here? Create Account →</a>
     </div>
   </div>
 
-<script>
-  function login() {
-    const userId = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value.trim();
+  <script>
+    function login() {
+      const userId = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
 
-    if (!userId || !password) {
-      alert("❌ Please enter both username and password");
-      return;
-    }
-
-    fetch("https://multi-user-trading-bot.onrender.com/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, password: password })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === "success") {
-        localStorage.setItem("userId", userId);
-        window.location.href = "dashboard.html";
-      } else {
-        alert("❌ " + (data.message || "Login failed"));
+      if (!userId || !password) {
+        alert("❌ Please enter both username and password");
+        return;
       }
-    })
-    .catch(() => {
-      alert("❌ Server error. Please try again later.");
-    });
-  }
-</script>
+
+      fetch("https://multi-user-trading-bot.onrender.com/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, password: password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          localStorage.setItem("userId", userId);
+          window.location.href = "dashboard.html";
+        } else {
+          alert("❌ " + (data.message || "Login failed"));
+        }
+      })
+      .catch(() => {
+        alert("❌ Server error. Please try again later.");
+      });
+    }
+  </script>
 </body>
 </html>
