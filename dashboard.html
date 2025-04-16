@@ -68,24 +68,6 @@
       border: 1px solid #aaa;
       color: var(--text-color);
     }
-
-    .watchlist-badge {
-      background: var(--primary);
-      padding: 6px 12px;
-      border-radius: 12px;
-      margin: 4px;
-      color: white;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .watchlist-badge button {
-      background: none;
-      border: none;
-      color: white;
-      margin-left: 8px;
-      font-weight: bold;
-    }
   </style>
 </head>
 <body>
@@ -103,6 +85,30 @@
     </div>
 
     <div class="row g-3">
+      <!-- Strategy Selection -->
+      <div class="col-lg-6">
+        <div class="card p-3">
+          <h5>📊 Select Strategy</h5>
+          <select id="strategy" class="form-select" onchange="updateStrategy()">
+            <option value="balanced">Balanced</option>
+            <option value="momentum">Momentum</option>
+            <option value="reversal">Reversal</option>
+            <option value="volume_spike">Volume Spike</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Bot Selector -->
+      <div class="col-lg-6">
+        <div class="card p-3 d-flex align-items-center justify-content-center">
+          <div>
+            <h5>🤖 Choose a Trading Bot</h5>
+            <button class="btn btn-outline-dark mt-2" onclick="location.href='bot-selection.html'">Go to Bot Selection</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portfolio -->
       <div class="col-lg-6">
         <div class="card p-3">
           <h5>💼 Portfolio</h5>
@@ -115,6 +121,7 @@
         </div>
       </div>
 
+      <!-- Alpaca Connect -->
       <div class="col-lg-6">
         <div class="card p-3">
           <h5>🔐 Connect Alpaca API</h5>
@@ -124,6 +131,7 @@
         </div>
       </div>
 
+      <!-- Suggestions -->
       <div class="col-lg-12">
         <div class="card p-3">
           <h5>🔥 Suggested Trades</h5>
@@ -144,6 +152,7 @@
         </div>
       </div>
 
+      <!-- Logs -->
       <div class="col-lg-12">
         <div class="card p-3">
           <h5>📋 Trade Logs</h5>
@@ -164,6 +173,7 @@
         </div>
       </div>
 
+      <!-- Chart -->
       <div class="col-lg-12">
         <div class="card p-3">
           <h5>📈 TradingView Chart</h5>
@@ -241,6 +251,21 @@
           });
           if (suggestions.length > 0) updateChart(suggestions[0].symbol);
         });
+
+      fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.strategy) document.getElementById("strategy").value = data.strategy;
+        });
+    }
+
+    function updateStrategy() {
+      const strategy = document.getElementById("strategy").value;
+      fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ strategy })
+      });
     }
 
     function updateChart(symbol) {
