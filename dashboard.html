@@ -5,237 +5,176 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartBot Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --background: #0f0f10;
-      --foreground: #fefefe;
-      --accent: #00ffd5;
-      --highlight: #1d1e22;
-      --card-bg: #202124;
-      --border: #2e2e2e;
+      --bg: #0d0d0d;
+      --text: #ffffff;
+      --muted: #aaaaaa;
+      --primary: #00fff2;
       --danger: #ff3d00;
-      --radius: 20px;
+      --card: #1a1a1d;
+      --radius: 16px;
     }
-
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Urbanist', sans-serif;
+      font-family: 'Outfit', sans-serif;
     }
-
     body {
-      background: var(--background);
-      color: var(--foreground);
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
     }
-
-    .grid-container {
-      display: grid;
-      grid-template-columns: 240px 1fr;
-      min-height: 100vh;
-    }
-
-    .sidebar {
-      background: var(--highlight);
-      padding: 2rem 1.5rem;
-      border-right: 1px solid var(--border);
-    }
-
-    .sidebar h3 {
-      color: var(--accent);
-      font-weight: 800;
-      margin-bottom: 2rem;
-    }
-
-    .sidebar a {
-      display: block;
-      color: #d4d4d4;
-      text-decoration: none;
-      font-size: 1.1rem;
-      margin-bottom: 1.2rem;
-      transition: 0.3s;
-    }
-
-    .sidebar a:hover {
-      color: var(--accent);
-      transform: translateX(6px);
-    }
-
-    .main-content {
-      padding: 2rem;
-    }
-
-    header {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 1.5rem 2rem;
+    .navbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+      padding: 1.2rem 2rem;
+      background: var(--card);
+      border-bottom: 1px solid #333;
     }
-
-    .logo-container {
+    .navbar .brand {
       display: flex;
       align-items: center;
       gap: 1rem;
     }
-
-    .logo-container img {
-      width: 45px;
-      height: 45px;
-      object-fit: contain;
+    .navbar .brand img {
+      height: 40px;
+      width: 40px;
     }
-
-    .logo-container span {
-      font-size: 1.6rem;
-      color: var(--accent);
+    .navbar .brand span {
+      font-size: 1.4rem;
       font-weight: 700;
+      color: var(--primary);
     }
-
-    .btn-theme, .btn-logout {
-      padding: 0.5rem 1.5rem;
-      border-radius: 12px;
-      font-weight: 600;
+    .navbar .actions button {
       border: none;
+      border-radius: var(--radius);
+      padding: 0.5rem 1.2rem;
+      margin-left: 1rem;
+      font-weight: 600;
     }
-
-    .btn-theme {
+    .navbar .btn-theme {
       background: #fff;
       color: #000;
-      margin-right: 1rem;
     }
-
-    .btn-logout {
+    .navbar .btn-logout {
       background: var(--danger);
       color: #fff;
     }
-
-    .dashboard-section {
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      height: calc(100vh - 80px);
+    }
+    .sidebar {
+      background: #141417;
+      padding: 2rem 1rem;
+      border-right: 1px solid #2e2e2e;
+    }
+    .sidebar a {
+      display: block;
+      margin-bottom: 1rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 1.1rem;
+      transition: all 0.2s ease-in-out;
+    }
+    .sidebar a:hover {
+      color: var(--primary);
+      padding-left: 8px;
+    }
+    .main {
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 2rem;
     }
-
     .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
+      background: var(--card);
       border-radius: var(--radius);
       padding: 2rem;
-      color: var(--foreground);
+      color: var(--text);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     }
-
     .card h5 {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--accent);
+      color: var(--primary);
+      font-weight: 600;
       margin-bottom: 1rem;
     }
-
-    input, select, textarea {
-      background: #2a2a2d;
-      color: #ffffff;
+    .card input, .card select {
+      background: #2c2c2f;
       border: 1px solid #444;
-      border-radius: 10px;
       padding: 0.75rem 1rem;
       width: 100%;
-      font-size: 1rem;
+      border-radius: 12px;
+      color: var(--text);
+      margin-bottom: 1rem;
     }
-
-    input::placeholder, textarea::placeholder {
-      color: #bbbbbb;
-    }
-
-    .watchlist-badge {
-      background: var(--accent);
+    .badge {
+      background: var(--primary);
       color: #000;
+      border-radius: 999px;
       padding: 0.4rem 1rem;
-      border-radius: 30px;
+      margin: 0.2rem;
+      display: inline-block;
       font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      margin: 0.25rem;
     }
-
     #popup {
       position: fixed;
       top: 1rem;
       left: 50%;
       transform: translateX(-50%);
-      background: var(--card-bg);
-      color: var(--foreground);
+      background: var(--card);
+      color: var(--text);
       padding: 1rem 2rem;
       border-radius: 12px;
-      border: 1px solid var(--border);
+      border: 1px solid #333;
       display: none;
-    }
-
-    iframe {
-      border-radius: var(--radius);
-      width: 100%;
-      border: none;
-    }
-
-    @media (max-width: 768px) {
-      .grid-container {
-        grid-template-columns: 1fr;
-      }
-      .sidebar {
-        display: flex;
-        justify-content: space-around;
-      }
     }
   </style>
 </head>
 <body>
-  <div class="grid-container">
+  <div class="navbar">
+    <div class="brand">
+      <img src="/logo.png" alt="Logo">
+      <span>Smart Trading</span>
+    </div>
+    <div class="actions">
+      <button class="btn-theme" onclick="toggleTheme()">🌓 Theme</button>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+  <div class="layout">
     <div class="sidebar">
-      <h3>SmartBot</h3>
       <a href="#portfolio">💼 Portfolio</a>
       <a href="#strategy">📈 Strategy</a>
       <a href="#watchlist">📌 Watchlist</a>
       <a href="#logs">📋 Logs</a>
       <a href="#trades">🔥 Trades</a>
     </div>
-    <div class="main-content">
-      <header>
-        <div class="logo-container">
-          <img src="/logo.png" alt="Logo">
-          <span>Smart Trading Dashboard</span>
+    <div class="main">
+      <div class="grid">
+        <div class="card">
+          <h5>👋 Welcome, <span id="greetingUser">User</span></h5>
         </div>
-        <div>
-          <button class="btn-theme" onclick="toggleTheme()">🌓 Theme</button>
-          <button class="btn-logout" onclick="logout()">Logout</button>
-        </div>
-      </header>
-      
-    <div class="card p-3 mb-3">
-      <h4>👋 Welcome, <span id="greetingUser">User</span></h4>
-    </div>
-
-    <div class="row g-3">
-      <div class="col-lg-6">
-        <div class="card p-3">
+        <div class="card">
           <h5>📊 Select Strategy</h5>
-          <select id="strategy" class="form-select" onchange="updateStrategy()">
+          <select id="strategy" onchange="updateStrategy()">
             <option value="balanced">Balanced</option>
             <option value="momentum">Momentum</option>
             <option value="reversal">Reversal</option>
             <option value="volume_spike">Volume Spike</option>
           </select>
         </div>
-      </div>
-      <div class="col-lg-6">
-        <div class="card p-3">
+        <div class="card">
           <h5>🤖 Choose Trading Bot</h5>
-          <button class="btn btn-outline-dark mt-2" onclick="location.href='bot-selection.html'">Choose Bot</button>
+          <button class="btn btn-outline-light w-100" onclick="location.href='bot-selection.html'">Choose Bot</button>
         </div>
-      </div>
-
-      <div class="col-lg-6">
-        <div class="card p-3">
+        <div class="card">
           <h5>💼 Portfolio</h5>
           <ul class="list-unstyled">
             <li>💰 Cash: <span id="cash">--</span></li>
@@ -244,194 +183,181 @@
             <li>📊 Unrealized P/L: <span id="pnl">--</span></li>
           </ul>
         </div>
-      </div>
-
-      <div class="col-lg-6">
-        <div class="card p-3">
+        <div class="card">
           <h5>🔐 Connect Alpaca API</h5>
-          <input type="text" id="alpacaKey" class="form-control mb-2" placeholder="API Key">
-          <input type="text" id="alpacaSecret" class="form-control mb-2" placeholder="Secret Key">
-          <button class="btn btn-success" onclick="connectAlpaca()">Connect</button>
+          <input type="text" id="alpacaKey" placeholder="API Key">
+          <input type="text" id="alpacaSecret" placeholder="Secret Key">
+          <button class="btn btn-success w-100" onclick="connectAlpaca()">Connect</button>
         </div>
-      </div>
-
-      <div class="col-lg-12">
-        <div class="card p-3">
-          <h5>🔥 Suggested Trades</h5>
-          <table class="table table-bordered table-hover mt-2 text-center">
-            <thead><tr><th>Symbol</th><th>Price</th><th>Change%</th><th>Action</th><th>Trade</th></tr></thead>
-            <tbody id="suggested-body"><tr><td colspan="5">Loading...</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="col-lg-12">
-        <div class="card p-3">
+        <div class="card">
           <h5>📋 Trade Logs</h5>
-          <table class="table table-striped text-center">
+          <table class="table table-dark table-striped text-center">
             <thead><tr><th>Time</th><th>Symbol</th><th>Action</th><th>Qty</th><th>Status</th></tr></thead>
             <tbody id="log-body"><tr><td colspan="5">Loading...</td></tr></tbody>
           </table>
         </div>
-      </div>
-
-      <div class="col-lg-12">
-        <div class="card p-3">
+        <div class="card">
+          <h5>🔥 Suggested Trades</h5>
+          <table class="table table-dark table-bordered text-center">
+            <thead><tr><th>Symbol</th><th>Price</th><th>Change%</th><th>Action</th><th>Trade</th></tr></thead>
+            <tbody id="suggested-body"><tr><td colspan="5">Loading...</td></tr></tbody>
+          </table>
+        </div>
+        <div class="card">
           <h5>📌 Watchlist</h5>
-          <input type="text" id="watchSymbol" class="form-control mb-2" placeholder="e.g. AAPL" />
-          <button class="btn btn-outline-primary mb-3" onclick="addToWatchlist()">Add</button>
+          <input type="text" id="watchSymbol" placeholder="e.g. AAPL">
+          <button class="btn btn-outline-info mt-2 mb-2" onclick="addToWatchlist()">Add</button>
           <div id="watchlistTags"></div>
         </div>
-      </div>
-
-      <div class="col-lg-12">
-        <div class="card p-3">
+        <div class="card">
           <h5>📈 TradingView Chart</h5>
-          <iframe id="chart-frame" height="400" style="width: 100%;" src="" loading="lazy"></iframe>
+          <iframe id="chart-frame" height="400" src="" loading="lazy"></iframe>
         </div>
       </div>
     </div>
   </div>
-
   <div id="popup"><span id="popup-message"></span></div>
+<script>
+let user = "";
+document.addEventListener("DOMContentLoaded", () => {
+  user = localStorage.getItem("userId");
+  if (!user) return location.href = "login.html";
+  document.getElementById("greetingUser").innerText = user;
+  loadUserData();
+  detectDarkMode();
+});
 
-  <script>
-    let user = "";
-    document.addEventListener("DOMContentLoaded", () => {
-      user = localStorage.getItem("userId");
-      if (!user) return location.href = "login.html";
-      document.getElementById("greetingUser").innerText = user;
-      loadUserData();
-      detectDarkMode();
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute("data-theme") === "dark";
+  html.setAttribute("data-theme", isDark ? "light" : "dark");
+  updateChart("AAPL");
+}
+
+function detectDarkMode() {
+  const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+}
+
+function logout() {
+  localStorage.removeItem("userId");
+  location.href = "login.html";
+}
+
+function loadUserData() {
+  fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
+    .then(r => r.json()).then(data => {
+      if (data.status === "success") {
+        document.getElementById("cash").innerText = `$${data.cash}`;
+        document.getElementById("market_value").innerText = `$${data.market_value}`;
+        document.getElementById("equity").innerText = `$${data.equity}`;
+        document.getElementById("pnl").innerText = `$${data.pnl}`;
+      }
     });
 
-    function toggleTheme() {
-      const current = document.documentElement.getAttribute("data-theme");
-      const newTheme = current === "dark" ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", newTheme);
-      updateChart("AAPL");
-    }
-
-    function detectDarkMode() {
-      const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-    }
-
-    function logout() {
-      localStorage.removeItem("userId");
-      location.href = "login.html";
-    }
-
-    function loadUserData() {
-      fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`).then(r => r.json()).then(data => {
-        if (data.status === "success") {
-          document.getElementById("cash").innerText = `$${data.cash}`;
-          document.getElementById("market_value").innerText = `$${data.market_value}`;
-          document.getElementById("equity").innerText = `$${data.equity}`;
-          document.getElementById("pnl").innerText = `$${data.pnl}`;
-        }
+  fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
+    .then(r => r.json()).then(logs => {
+      const tbody = document.getElementById("log-body");
+      tbody.innerHTML = logs.length ? "" : "<tr><td colspan='5'>No logs.</td></tr>";
+      logs.forEach(log => {
+        tbody.innerHTML += `<tr><td>${log.timestamp}</td><td>${log.symbol}</td><td>${log.action}</td><td>${log.quantity}</td><td>${log.status}</td></tr>`;
       });
+    });
 
-      fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`).then(r => r.json()).then(logs => {
-        const tbody = document.getElementById("log-body");
-        tbody.innerHTML = logs.length ? "" : "<tr><td colspan='5'>No logs.</td></tr>";
-        logs.forEach(log => {
-          tbody.innerHTML += `<tr><td>${log.timestamp}</td><td>${log.symbol}</td><td>${log.action}</td><td>${log.quantity}</td><td>${log.status}</td></tr>`;
-        });
+  fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
+    .then(r => r.json()).then(data => {
+      const tbody = document.getElementById("suggested-body");
+      tbody.innerHTML = "";
+      data.forEach(s => {
+        tbody.innerHTML += `<tr><td>${s.symbol}</td><td>${s.current_price}</td><td>${s.change_percent}%</td><td>${s.suggestion}</td><td><button class='btn btn-sm btn-outline-success' onclick="autoTrade('${s.symbol}', '${s.suggestion.toLowerCase()}')">Trade</button></td></tr>`;
       });
+      if (data.length > 0) updateChart(data[0].symbol);
+    });
 
-      fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`).then(r => r.json()).then(data => {
-        const tbody = document.getElementById("suggested-body");
-        tbody.innerHTML = "";
-        data.forEach(s => {
-          tbody.innerHTML += `<tr><td>${s.symbol}</td><td>${s.current_price}</td><td>${s.change_percent}%</td><td>${s.suggestion}</td><td><button class='btn btn-sm btn-outline-success' onclick="autoTrade('${s.symbol}', '${s.suggestion.toLowerCase()}')">Trade</button></td></tr>`;
-        });
-        if (data.length > 0) updateChart(data[0].symbol);
+  fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`)
+    .then(r => r.json()).then(data => {
+      const container = document.getElementById("watchlistTags");
+      container.innerHTML = "";
+      data.symbols.forEach(sym => {
+        container.innerHTML += `<span class='badge'>${sym} <button onclick="removeFromWatchlist('${sym}')" style='border:none;background:none;color:white;margin-left:8px;'>&times;</button></span>`;
       });
+    });
 
-      fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`).then(r => r.json()).then(data => {
-        const container = document.getElementById("watchlistTags");
-        container.innerHTML = "";
-        data.symbols.forEach(sym => {
-          container.innerHTML += `<span class="watchlist-badge">${sym} <button onclick="removeFromWatchlist('${sym}')">&times;</button></span>`;
-        });
-      });
+  fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`)
+    .then(r => r.json()).then(d => {
+      if (d.strategy) document.getElementById("strategy").value = d.strategy;
+    });
+}
 
-      fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`).then(r => r.json()).then(d => {
-        if (d.strategy) document.getElementById("strategy").value = d.strategy;
-      });
-    }
+function updateStrategy() {
+  const strategy = document.getElementById("strategy").value;
+  fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ strategy })
+  });
+}
 
-    function updateStrategy() {
-      const strategy = document.getElementById("strategy").value;
-      fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ strategy })
-      });
-    }
+function updateChart(symbol) {
+  const theme = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  document.getElementById("chart-frame").src = `https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:${symbol}&interval=D&theme=${theme}`;
+}
 
-    function updateChart(symbol) {
-      const theme = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-      document.getElementById("chart-frame").src = `https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:${symbol}&interval=D&theme=${theme}`;
-    }
+function autoTrade(symbol, action) {
+  fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ symbol, action, quantity: 1 })
+  }).then(r => r.json()).then(d => {
+    showPopup(d.message || (d.status === "success" ? "✅ Trade Placed!" : "❌ Trade Failed"), d.status === "success");
+    loadUserData();
+  });
+}
 
-    function autoTrade(symbol, action) {
-      fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol, action, quantity: 1 })
-      }).then(r => r.json()).then(d => {
-        showPopup(d.message || (d.status === "success" ? "✅ Trade Placed!" : "❌ Trade Failed"), d.status === "success");
-        loadUserData();
-      });
-    }
+function connectAlpaca() {
+  const apiKey = document.getElementById("alpacaKey").value.trim();
+  const secretKey = document.getElementById("alpacaSecret").value.trim();
+  if (!apiKey || !secretKey) return showPopup("❌ API Key & Secret Key required", false);
 
-    function connectAlpaca() {
-      const apiKey = document.getElementById("alpacaKey").value.trim();
-      const secretKey = document.getElementById("alpacaSecret").value.trim();
-      if (!apiKey || !secretKey) return showPopup("❌ API Key & Secret Key required", false);
+  fetch("https://multi-user-trading-bot.onrender.com/connect-alpaca", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: user, api_key: apiKey, secret_key: secretKey })
+  }).then(r => r.json()).then(d => {
+    showPopup(d.message || (d.status === "success" ? "✅ Connected!" : "❌ Failed"), d.status === "success");
+  });
+}
 
-      fetch("https://multi-user-trading-bot.onrender.com/connect-alpaca", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user, api_key: apiKey, secret_key: secretKey })
-      }).then(r => r.json()).then(d => {
-        showPopup(d.message || (d.status === "success" ? "✅ Connected!" : "❌ Failed"), d.status === "success");
-      });
-    }
+function showPopup(msg, success = true) {
+  const pop = document.getElementById("popup");
+  pop.innerText = msg;
+  pop.style.borderColor = success ? "green" : "red";
+  pop.style.color = success ? "green" : "red";
+  pop.style.display = "block";
+  setTimeout(() => pop.style.display = "none", 4000);
+}
 
-    function showPopup(msg, success = true) {
-      const pop = document.getElementById("popup");
-      pop.innerText = msg;
-      pop.style.borderColor = success ? "green" : "red";
-      pop.style.color = success ? "green" : "red";
-      pop.style.display = "block";
-      setTimeout(() => pop.style.display = "none", 4000);
-    }
+function addToWatchlist() {
+  const sym = document.getElementById("watchSymbol").value.trim().toUpperCase();
+  if (!sym) return;
+  fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "add", symbol: sym })
+  }).then(() => loadUserData());
+}
 
-    function addToWatchlist() {
-      const sym = document.getElementById("watchSymbol").value.trim().toUpperCase();
-      if (!sym) return;
-      fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "add", symbol: sym })
-      }).then(() => loadUserData());
-    }
+function removeFromWatchlist(symbol) {
+  fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "remove", symbol })
+  }).then(() => loadUserData());
+}
 
-    function removeFromWatchlist(symbol) {
-      fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "remove", symbol })
-      }).then(() => loadUserData());
-    }
-
-    // Register service worker for PWA
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
-  </script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
 </body>
 </html>
