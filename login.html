@@ -20,6 +20,12 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      animation: fadeIn 1s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .login-container {
@@ -29,23 +35,40 @@
       box-shadow: 0 0 20px rgba(0,0,0,0.6);
       width: 100%;
       max-width: 400px;
+      text-align: center;
       transition: 0.3s ease;
     }
 
+    .logo {
+      margin-bottom: 1rem;
+    }
+
+    .logo img {
+      max-width: 80px;
+      height: auto;
+      filter: brightness(1.2);
+      animation: bounce 0.8s ease-out;
+    }
+
+    @keyframes bounce {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
     .login-container h2 {
-      text-align: center;
       color: #ffffff;
       margin-bottom: 1.5rem;
-      font-size: 2rem;
+      font-size: 1.8rem;
     }
 
     .form-group {
       margin-bottom: 1.2rem;
+      text-align: left;
     }
 
     label {
-      font-size: 0.9rem;
-      color: #aaa;
+      font-size: 0.85rem;
+      color: #bbb;
     }
 
     input {
@@ -77,18 +100,18 @@
       font-weight: bold;
       cursor: pointer;
       margin-top: 1rem;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: 0.3s ease-in-out;
     }
 
     .login-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(58, 134, 255, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(58, 134, 255, 0.4);
     }
 
     .switch-link {
       text-align: center;
-      margin-top: 1rem;
-      font-size: 0.9rem;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
     }
 
     .switch-link a {
@@ -105,7 +128,12 @@
 <body>
 
   <div class="login-container">
-    <h2>Welcome Back</h2>
+    <!-- 🔻 Upload your logo and replace the path below -->
+    <div class="logo">
+      <img src="logo.png" alt="SmartBot Logo" />
+    </div>
+
+    <h2>Login to SmartBot</h2>
     <form id="loginForm" onsubmit="loginUser(event)">
       <div class="form-group">
         <label for="userId">User ID</label>
@@ -118,7 +146,7 @@
       <button type="submit" class="login-btn">Login</button>
     </form>
     <div class="switch-link">
-      New here? <a href="signup.html">Create an account</a>
+      New user? <a href="signup.html">Sign up</a>
     </div>
   </div>
 
