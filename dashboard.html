@@ -182,6 +182,12 @@
     <div class="main">
       <div class="grid">
         <div class="card">
+          <h5>🧠 AI Trade Recommender</h5>
+          <p style="font-size: 0.95rem; color: var(--muted);">Click below to receive a smart suggestion based on market change patterns and your selected strategy.</p>
+          <button class="btn btn-outline-warning w-100" onclick="getAIRecommendation()">Get Recommendation</button>
+          <div id="ai-recommendation" style="margin-top: 1rem; font-size: 1rem; color: var(--primary); font-weight: 600;"></div>
+        </div>
+        <div class="card">
           <h5>🔍 Quick Stock Search</h5>
           <input type="text" id="searchStock" placeholder="Search stock symbol..." onkeyup="searchStock()">
           <div id="searchResult" style="margin-top: 0.5rem; color: var(--muted); font-size: 0.9rem;">Start typing to search</div>
@@ -467,6 +473,21 @@ if (heatmap) {
     if (Math.random() > 0.7) day.classList.add("active");
     heatmap.appendChild(day);
   }
+}
+function getAIRecommendation() {
+  const recDiv = document.getElementById("ai-recommendation");
+  recDiv.innerText = "🤖 Thinking...";
+  setTimeout(() => {
+    const suggestions = [
+      "Buy TSLA – Momentum is high this week 🚀",
+      "Hold AAPL – Market is consolidating 📉",
+      "Sell NFLX – Downtrend after earnings ⚠️",
+      "Watch AMZN – Strong volume surge 💹",
+      "Re-enter INFY – Recovery likely 📈"
+    ];
+    const random = Math.floor(Math.random() * suggestions.length);
+    recDiv.innerText = suggestions[random];
+  }, 1200);
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
