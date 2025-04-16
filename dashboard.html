@@ -1,60 +1,57 @@
+
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SmartBot Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="manifest" href="manifest.json" />
   <style>
     :root {
       --primary: #0d6efd;
+      --accent: #ffc107;
       --dark-bg: #121212;
       --light-bg: #f8f9fa;
       --dark-card: #1f1f1f;
       --light-card: #ffffff;
       --text-dark: #e0e0e0;
       --text-light: #212529;
-      --accent: #ffc107;
     }
-
-    [data-theme="dark"] {
+    [data-theme='dark'] {
       --bg-color: var(--dark-bg);
       --text-color: var(--text-dark);
       --card-bg: var(--dark-card);
     }
-
-    [data-theme="light"] {
+    [data-theme='light'] {
       --bg-color: var(--light-bg);
       --text-color: var(--text-light);
       --card-bg: var(--light-card);
     }
-
     body {
       background-color: var(--bg-color);
       color: var(--text-color);
-      transition: 0.3s ease all;
       padding: 1rem;
+      transition: background 0.3s, color 0.3s;
     }
-
     .card {
-      background-color: var(--card-bg) !important;
-      transition: background 0.3s;
+      background-color: var(--card-bg);
     }
-
-    .table th {
-      background-color: var(--primary);
+    .watchlist-badge {
+      background: var(--primary);
       color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      margin: 4px;
+      display: inline-flex;
+      align-items: center;
     }
-
-    .btn-toggle {
-      background-color: var(--accent);
-      color: black;
+    .watchlist-badge button {
+      background: none;
+      border: none;
+      color: white;
+      margin-left: 8px;
     }
-
-    .btn-toggle:hover {
-      background-color: #e0a800;
-    }
-
     #popup {
       display: none;
       position: fixed;
@@ -80,12 +77,11 @@
       </div>
     </div>
 
-    <div class="card p-3 mb-4">
-      <h4>👤 Welcome, <span id="greetingUser">User</span></h4>
+    <div class="card p-3 mb-3">
+      <h4>👋 Welcome, <span id="greetingUser">User</span></h4>
     </div>
 
     <div class="row g-3">
-      <!-- Strategy Selection -->
       <div class="col-lg-6">
         <div class="card p-3">
           <h5>📊 Select Strategy</h5>
@@ -97,22 +93,17 @@
           </select>
         </div>
       </div>
-
-      <!-- Bot Selector -->
       <div class="col-lg-6">
-        <div class="card p-3 d-flex align-items-center justify-content-center">
-          <div>
-            <h5>🤖 Choose a Trading Bot</h5>
-            <button class="btn btn-outline-dark mt-2" onclick="location.href='bot-selection.html'">Go to Bot Selection</button>
-          </div>
+        <div class="card p-3">
+          <h5>🤖 Choose Trading Bot</h5>
+          <button class="btn btn-outline-dark mt-2" onclick="location.href='bot-selection.html'">Choose Bot</button>
         </div>
       </div>
 
-      <!-- Portfolio -->
       <div class="col-lg-6">
         <div class="card p-3">
           <h5>💼 Portfolio</h5>
-          <ul class="list-unstyled mb-0">
+          <ul class="list-unstyled">
             <li>💰 Cash: <span id="cash">--</span></li>
             <li>📈 Market Value: <span id="market_value">--</span></li>
             <li>💵 Total Equity: <span id="equity">--</span></li>
@@ -121,7 +112,6 @@
         </div>
       </div>
 
-      <!-- Alpaca Connect -->
       <div class="col-lg-6">
         <div class="card p-3">
           <h5>🔐 Connect Alpaca API</h5>
@@ -131,53 +121,39 @@
         </div>
       </div>
 
-      <!-- Suggestions -->
       <div class="col-lg-12">
         <div class="card p-3">
           <h5>🔥 Suggested Trades</h5>
           <table class="table table-bordered table-hover mt-2 text-center">
-            <thead>
-              <tr>
-                <th>Symbol</th>
-                <th>Price</th>
-                <th>Change%</th>
-                <th>Action</th>
-                <th>Trade</th>
-              </tr>
-            </thead>
-            <tbody id="suggested-body">
-              <tr><td colspan="5">Loading...</td></tr>
-            </tbody>
+            <thead><tr><th>Symbol</th><th>Price</th><th>Change%</th><th>Action</th><th>Trade</th></tr></thead>
+            <tbody id="suggested-body"><tr><td colspan="5">Loading...</td></tr></tbody>
           </table>
         </div>
       </div>
 
-      <!-- Logs -->
       <div class="col-lg-12">
         <div class="card p-3">
           <h5>📋 Trade Logs</h5>
           <table class="table table-striped text-center">
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Symbol</th>
-                <th>Action</th>
-                <th>Qty</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="log-body">
-              <tr><td colspan="5">Loading...</td></tr>
-            </tbody>
+            <thead><tr><th>Time</th><th>Symbol</th><th>Action</th><th>Qty</th><th>Status</th></tr></thead>
+            <tbody id="log-body"><tr><td colspan="5">Loading...</td></tr></tbody>
           </table>
         </div>
       </div>
 
-      <!-- Chart -->
+      <div class="col-lg-12">
+        <div class="card p-3">
+          <h5>📌 Watchlist</h5>
+          <input type="text" id="watchSymbol" class="form-control mb-2" placeholder="e.g. AAPL" />
+          <button class="btn btn-outline-primary mb-3" onclick="addToWatchlist()">Add</button>
+          <div id="watchlistTags"></div>
+        </div>
+      </div>
+
       <div class="col-lg-12">
         <div class="card p-3">
           <h5>📈 TradingView Chart</h5>
-          <iframe id="chart-frame" height="400" src="https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:AAPL&interval=D&theme=light" loading="lazy"></iframe>
+          <iframe id="chart-frame" height="400" style="width: 100%;" src="" loading="lazy"></iframe>
         </div>
       </div>
     </div>
@@ -187,19 +163,24 @@
 
   <script>
     let user = "";
-
     document.addEventListener("DOMContentLoaded", () => {
       user = localStorage.getItem("userId");
       if (!user) return location.href = "login.html";
-      document.getElementById("greetingUser").textContent = user;
+      document.getElementById("greetingUser").innerText = user;
       loadUserData();
+      detectDarkMode();
     });
 
     function toggleTheme() {
-      const root = document.documentElement;
-      const theme = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-      root.setAttribute("data-theme", theme);
+      const current = document.documentElement.getAttribute("data-theme");
+      const newTheme = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", newTheme);
       updateChart("AAPL");
+    }
+
+    function detectDarkMode() {
+      const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
     }
 
     function logout() {
@@ -208,55 +189,43 @@
     }
 
     function loadUserData() {
-      fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === "success") {
-            document.getElementById("cash").innerText = `$${data.cash}`;
-            document.getElementById("market_value").innerText = `$${data.market_value}`;
-            document.getElementById("equity").innerText = `$${data.equity}`;
-            document.getElementById("pnl").innerText = `$${data.pnl}`;
-          }
-        });
+      fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`).then(r => r.json()).then(data => {
+        if (data.status === "success") {
+          document.getElementById("cash").innerText = `$${data.cash}`;
+          document.getElementById("market_value").innerText = `$${data.market_value}`;
+          document.getElementById("equity").innerText = `$${data.equity}`;
+          document.getElementById("pnl").innerText = `$${data.pnl}`;
+        }
+      });
 
-      fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
-        .then(res => res.json())
-        .then(logs => {
-          const tbody = document.getElementById("log-body");
-          tbody.innerHTML = logs.length ? "" : `<tr><td colspan="5">No logs.</td></tr>`;
-          logs.forEach(log => {
-            tbody.innerHTML += `<tr>
-              <td>${log.timestamp}</td>
-              <td>${log.symbol}</td>
-              <td>${log.action}</td>
-              <td>${log.quantity}</td>
-              <td>${log.status}</td>
-            </tr>`;
-          });
+      fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`).then(r => r.json()).then(logs => {
+        const tbody = document.getElementById("log-body");
+        tbody.innerHTML = logs.length ? "" : "<tr><td colspan='5'>No logs.</td></tr>";
+        logs.forEach(log => {
+          tbody.innerHTML += `<tr><td>${log.timestamp}</td><td>${log.symbol}</td><td>${log.action}</td><td>${log.quantity}</td><td>${log.status}</td></tr>`;
         });
+      });
 
-      fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`)
-        .then(res => res.json())
-        .then(suggestions => {
-          const tbody = document.getElementById("suggested-body");
-          tbody.innerHTML = "";
-          suggestions.forEach(item => {
-            tbody.innerHTML += `<tr>
-              <td>${item.symbol}</td>
-              <td>$${item.current_price}</td>
-              <td>${item.change_percent}%</td>
-              <td>${item.suggestion}</td>
-              <td><button class="btn btn-sm btn-outline-success" onclick="autoTrade('${item.symbol}', '${item.suggestion.toLowerCase()}')">Trade</button></td>
-            </tr>`;
-          });
-          if (suggestions.length > 0) updateChart(suggestions[0].symbol);
+      fetch(`https://multi-user-trading-bot.onrender.com/suggested/${user}`).then(r => r.json()).then(data => {
+        const tbody = document.getElementById("suggested-body");
+        tbody.innerHTML = "";
+        data.forEach(s => {
+          tbody.innerHTML += `<tr><td>${s.symbol}</td><td>${s.current_price}</td><td>${s.change_percent}%</td><td>${s.suggestion}</td><td><button class='btn btn-sm btn-outline-success' onclick="autoTrade('${s.symbol}', '${s.suggestion.toLowerCase()}')">Trade</button></td></tr>`;
         });
+        if (data.length > 0) updateChart(data[0].symbol);
+      });
 
-      fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.strategy) document.getElementById("strategy").value = data.strategy;
+      fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`).then(r => r.json()).then(data => {
+        const container = document.getElementById("watchlistTags");
+        container.innerHTML = "";
+        data.symbols.forEach(sym => {
+          container.innerHTML += `<span class="watchlist-badge">${sym} <button onclick="removeFromWatchlist('${sym}')">&times;</button></span>`;
         });
+      });
+
+      fetch(`https://multi-user-trading-bot.onrender.com/strategy/${user}`).then(r => r.json()).then(d => {
+        if (d.strategy) document.getElementById("strategy").value = d.strategy;
+      });
     }
 
     function updateStrategy() {
@@ -270,8 +239,7 @@
 
     function updateChart(symbol) {
       const theme = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-      const frame = document.getElementById("chart-frame");
-      frame.src = `https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:${symbol}&interval=D&theme=${theme}`;
+      document.getElementById("chart-frame").src = `https://s.tradingview.com/embed-widget/symbol-overview/?symbol=NASDAQ:${symbol}&interval=D&theme=${theme}`;
     }
 
     function autoTrade(symbol, action) {
@@ -279,10 +247,8 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol, action, quantity: 1 })
-      })
-      .then(res => res.json())
-      .then(data => {
-        showPopup(data.message || (data.status === "success" ? "✅ Trade Placed!" : "❌ Trade Failed"), data.status === "success");
+      }).then(r => r.json()).then(d => {
+        showPopup(d.message || (d.status === "success" ? "✅ Trade Placed!" : "❌ Trade Failed"), d.status === "success");
         loadUserData();
       });
     }
@@ -290,26 +256,47 @@
     function connectAlpaca() {
       const apiKey = document.getElementById("alpacaKey").value.trim();
       const secretKey = document.getElementById("alpacaSecret").value.trim();
-      if (!apiKey || !secretKey) return showPopup("❌ API Key and Secret Key required", false);
+      if (!apiKey || !secretKey) return showPopup("❌ API Key & Secret Key required", false);
 
       fetch("https://multi-user-trading-bot.onrender.com/connect-alpaca", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: user, api_key: apiKey, secret_key: secretKey })
-      })
-      .then(res => res.json())
-      .then(data => {
-        showPopup(data.message || (data.status === "success" ? "✅ Connected" : "❌ Failed"), data.status === "success");
+      }).then(r => r.json()).then(d => {
+        showPopup(d.message || (d.status === "success" ? "✅ Connected!" : "❌ Failed"), d.status === "success");
       });
     }
 
-    function showPopup(message, success = true) {
-      const popup = document.getElementById("popup");
-      popup.innerText = message;
-      popup.style.borderColor = success ? "green" : "red";
-      popup.style.color = success ? "green" : "red";
-      popup.style.display = "block";
-      setTimeout(() => popup.style.display = "none", 4000);
+    function showPopup(msg, success = true) {
+      const pop = document.getElementById("popup");
+      pop.innerText = msg;
+      pop.style.borderColor = success ? "green" : "red";
+      pop.style.color = success ? "green" : "red";
+      pop.style.display = "block";
+      setTimeout(() => pop.style.display = "none", 4000);
+    }
+
+    function addToWatchlist() {
+      const sym = document.getElementById("watchSymbol").value.trim().toUpperCase();
+      if (!sym) return;
+      fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add", symbol: sym })
+      }).then(() => loadUserData());
+    }
+
+    function removeFromWatchlist(symbol) {
+      fetch(`https://multi-user-trading-bot.onrender.com/watchlist/${user}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "remove", symbol })
+      }).then(() => loadUserData());
+    }
+
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
     }
   </script>
 </body>
