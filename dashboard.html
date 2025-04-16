@@ -6,151 +6,177 @@
   <title>SmartBot Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="manifest" href="manifest.json" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    /* Gradient Header */
-header.gradient-header {
-  background: linear-gradient(90deg, #0d6efd, #6610f2);
-  color: white;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 10px;
-  margin-bottom: 1.5rem;
-}
-
-  /* Sidebar Navigation */
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 220px;
-    height: 100vh;
-    background: #1f1f1f;
-    color: white;
-    padding: 2rem 1rem;
-    z-index: 1000;
-  }
-  .sidebar h3 {
-    margin-bottom: 2rem;
-    font-weight: bold;
-  }
-  .sidebar a {
-    display: block;
-    color: white;
-    margin-bottom: 1.2rem;
-    text-decoration: none;
-    transition: 0.3s;
-  }
-  .sidebar a:hover {
-    color: #ffc107;
-    padding-left: 5px;
-  }
-  
-  /* Main Content */
-  .main-content {
-    margin-left: 240px;
-    padding: 2rem;
-  }
-  
-  /* Buttons and hover animations */
-  button {
-    transition: all 0.3s ease;
-  }
-  button:hover {
-    transform: scale(1.03);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  }
-  
-  /* Minimalist Table */
-  .table th {
-    background: transparent;
-    color: var(--primary);
-    border-bottom: 2px solid var(--primary);
-  }
-  .table td {
-    border-bottom: 1px solid #ddd;
-  }
-  
-  /* Chart Container */
-  .chart-card {
-    background-color: var(--card-bg);
-    padding: 1rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    margin-bottom: 2rem;
-  }
-  
-  /* Responsive Sidebar */
-  @media (max-width: 768px) {
-    .sidebar {
-      position: static;
-      width: 100%;
-      height: auto;
-      display: flex;
-      flex-direction: row;
-      justify-content: space-around;
-    }
-    .main-content {
-      margin-left: 0;
-    }
-  }
     :root {
-      --primary: #0d6efd;
-      --accent: #ffc107;
-      --dark-bg: #121212;
-      --light-bg: #f8f9fa;
-      --dark-card: #1f1f1f;
-      --light-card: #ffffff;
-      --text-dark: #e0e0e0;
-      --text-light: #212529;
+      --primary: #00f6ff;
+      --accent: #ff9d00;
+      --bg-dark: #0c0c0c;
+      --card-dark: #1a1a1a;
+      --text-light: #ffffff;
     }
-    [data-theme='dark'] {
-      --bg-color: var(--dark-bg);
-      --text-color: var(--text-dark);
-      --card-bg: var(--dark-card);
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Space Grotesk', sans-serif;
     }
-    [data-theme='light'] {
-      --bg-color: var(--light-bg);
-      --text-color: var(--text-light);
-      --card-bg: var(--light-card);
-    }
+
     body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      padding: 1rem;
-      transition: background 0.3s, color 0.3s;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      padding: 0;
+      overflow-x: hidden;
     }
+
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 220px;
+      height: 100vh;
+      background-color: #121212;
+      padding: 2rem 1rem;
+      border-right: 1px solid #333;
+      z-index: 1000;
+    }
+
+    .sidebar h3 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 2rem;
+    }
+
+    .sidebar a {
+      display: block;
+      color: #aaa;
+      margin-bottom: 1.2rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .sidebar a:hover {
+      color: var(--accent);
+      padding-left: 8px;
+    }
+
+    .main-content {
+      margin-left: 240px;
+      padding: 2rem;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1c1c1c, #333);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    header h2 {
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .btn-custom {
+      background-color: var(--accent);
+      color: black;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+
     .card {
-      background-color: var(--card-bg);
+      background-color: var(--card-dark);
+      border: none;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
     }
+
+    .card h5 {
+      color: var(--accent);
+    }
+
+    table {
+      background-color: transparent;
+    }
+
+    th, td {
+      color: var(--text-light);
+    }
+
     .watchlist-badge {
-      background: var(--primary);
-      color: white;
-      padding: 4px 10px;
+      background-color: var(--primary);
+      color: black;
+      padding: 0.3rem 0.8rem;
       border-radius: 12px;
-      margin: 4px;
+      margin-right: 0.5rem;
       display: inline-flex;
       align-items: center;
+      font-weight: 500;
     }
+
     .watchlist-badge button {
       background: none;
       border: none;
-      color: white;
-      margin-left: 8px;
+      color: black;
+      font-weight: bold;
+      margin-left: 0.5rem;
+      cursor: pointer;
     }
+
+    iframe {
+      border: none;
+      border-radius: 12px;
+    }
+
     #popup {
       display: none;
       position: fixed;
-      top: 10px;
+      top: 1rem;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 1000;
-      padding: 0.75rem 1.5rem;
-      border-radius: 6px;
-      background: var(--card-bg);
-      border: 1px solid #aaa;
-      color: var(--text-color);
+      background-color: #222;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      border: 1px solid var(--accent);
+      z-index: 2000;
+    }
+
+    /* Logo Area */
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .logo-container img {
+      width: 40px;
+      height: 40px;
+    }
+    .logo-container span {
+      font-size: 1.5rem;
+      color: var(--text-light);
+      font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        justify-content: space-around;
+      }
+      .main-content {
+        margin-left: 0;
+        padding: 1rem;
+      }
     }
   </style>
 </head>
