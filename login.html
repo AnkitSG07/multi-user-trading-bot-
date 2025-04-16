@@ -4,130 +4,133 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login - SmartBot</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
-      font-family: 'Inter', sans-serif;
     }
 
     body {
-      background: linear-gradient(135deg, #0d1117, #1a1f25);
-      color: #e0e0e0;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+      color: #fff;
       overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      position: relative;
     }
 
-    /* Background trading animation */
-    body::before {
-      content: "";
+    .background-blobs {
       position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle at center, rgba(255,255,255,0.05) 1px, transparent 1px);
-      background-size: 40px 40px;
-      animation: moveGrid 30s linear infinite;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      top: 0;
+      left: 0;
       z-index: 0;
+    }
+
+    .blob {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, #3a86ff 0%, transparent 70%);
+      border-radius: 50%;
+      animation: moveBlob 20s infinite linear;
       opacity: 0.2;
     }
 
-    @keyframes moveGrid {
+    .blob:nth-child(2) {
+      left: 60%;
+      top: 20%;
+      background: radial-gradient(circle, #8338ec 0%, transparent 70%);
+      animation-delay: -10s;
+    }
+
+    @keyframes moveBlob {
       0% { transform: translate(0, 0); }
-      100% { transform: translate(50px, 50px); }
+      50% { transform: translate(-50px, 50px); }
+      100% { transform: translate(0, 0); }
     }
 
     .login-container {
-      background: #161b22;
-      padding: 3rem;
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.6);
-      width: 100%;
-      max-width: 400px;
       z-index: 1;
       position: relative;
-    }
-
-    .logo {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .logo img {
-      max-width: 120px;
-      height: auto;
+      background: #1f1f1f;
+      padding: 3rem;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      max-width: 400px;
+      width: 100%;
     }
 
     .login-container h2 {
-      text-align: center;
-      color: #ffffff;
-      margin-bottom: 1.5rem;
       font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      text-align: center;
+      background: linear-gradient(45deg, #3a86ff, #8338ec);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .form-group {
-      margin-bottom: 1.2rem;
+      margin-bottom: 1.5rem;
     }
 
     label {
       font-size: 0.9rem;
-      color: #aaa;
+      color: #bbb;
     }
 
     input {
       width: 100%;
-      padding: 0.75rem;
+      padding: 0.8rem;
+      margin-top: 0.4rem;
       border: none;
-      border-radius: 10px;
-      margin-top: 0.5rem;
-      background-color: #2b2b2b;
+      border-radius: 12px;
+      background-color: #2c2c2c;
       color: white;
       font-size: 1rem;
-      transition: 0.3s ease;
+      transition: box-shadow 0.2s ease;
     }
 
     input:focus {
       outline: none;
-      background-color: #333;
-      box-shadow: 0 0 0 2px #2f81f7;
+      box-shadow: 0 0 0 2px #3a86ff;
     }
 
     .login-btn {
       width: 100%;
-      padding: 0.9rem;
-      background: linear-gradient(135deg, #3a86ff, #8338ec);
+      padding: 1rem;
       border: none;
       border-radius: 12px;
+      background: linear-gradient(135deg, #3a86ff, #8338ec);
       color: white;
-      font-size: 1rem;
       font-weight: bold;
+      font-size: 1rem;
       cursor: pointer;
-      margin-top: 1rem;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .login-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(58, 134, 255, 0.4);
+      box-shadow: 0 8px 20px rgba(58, 134, 255, 0.4);
     }
 
     .switch-link {
+      margin-top: 1.2rem;
       text-align: center;
-      margin-top: 1rem;
       font-size: 0.9rem;
+      color: #ccc;
     }
 
     .switch-link a {
       color: #3a86ff;
       text-decoration: none;
-      transition: 0.3s;
     }
 
     .switch-link a:hover {
@@ -136,20 +139,21 @@
   </style>
 </head>
 <body>
+  <div class="background-blobs">
+    <div class="blob" style="top: 10%; left: 10%;"></div>
+    <div class="blob" style="top: 60%; left: 60%;"></div>
+  </div>
 
   <div class="login-container">
-    <div class="logo">
-      <img src="logo.png" alt="SmartBot Logo">
-    </div>
-    <h2>Welcome Back</h2>
+    <h2>Login to SmartBot</h2>
     <form id="loginForm" onsubmit="loginUser(event)">
       <div class="form-group">
         <label for="userId">User ID</label>
-        <input type="text" id="userId" required>
+        <input type="text" id="userId" required />
       </div>
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" required>
+        <input type="password" id="password" required />
       </div>
       <button type="submit" class="login-btn">Login</button>
     </form>
@@ -161,12 +165,12 @@
   <script>
     function loginUser(event) {
       event.preventDefault();
-      const userId = document.getElementById('userId').value;
+      const userId = document.getElementById('userId').value.trim();
       const password = document.getElementById('password').value;
 
       fetch('https://multi-user-trading-bot.onrender.com/login', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, password })
       })
       .then(res => res.json())
