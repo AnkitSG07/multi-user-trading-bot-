@@ -135,7 +135,29 @@
       border: 1px solid #333;
       display: none;
     }
-  </style>
+    .fade-in {
+    animation: fadeIn 0.8s ease-in-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .calendar-heatmap {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-top: 1rem;
+  }
+  .calendar-day {
+    width: 20px;
+    height: 20px;
+    background: #333;
+    border-radius: 4px;
+    transition: 0.2s ease;
+  }
+  .calendar-day.active {
+    background: var(--primary);
+  }
 </head>
 <body>
   <div class="navbar">
@@ -158,6 +180,29 @@
     </div>
     <div class="main">
       <div class="grid">
+        <div class="card">
+          <h5>🔍 Quick Stock Search</h5>
+          <input type="text" id="searchStock" placeholder="Search stock symbol..." onkeyup="searchStock()">
+          <div id="searchResult" style="margin-top: 0.5rem; color: var(--muted); font-size: 0.9rem;">Start typing to search</div>
+        </div>
+        <div class="card">
+          <h5>🔔 Notifications</h5>
+          <ul id="notificationList" style="list-style: none; padding-left: 0;">
+            <li>✅ System ready</li>
+            <li>💡 Strategy set to Balanced</li>
+            <li>📢 New signals available</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h5>📊 Market Summary</h5>
+          <p>📈 NIFTY 50: 22,435.65 (+0.45%)</p>
+          <p>📉 SENSEX: 73,115.68 (-0.32%)</p>
+          <p>💹 VIX: 12.34</p>
+        </div>
+        <div class="card">
+          <h5>📅 P&L Overview</h5>
+          <canvas id="pnlChart" height="200"></canvas>
+        </div>
         <div class="card">
           <h5>👋 Welcome, <span id="greetingUser">User</span></h5>
         </div>
@@ -189,7 +234,11 @@
           <input type="text" id="alpacaSecret" placeholder="Secret Key">
           <button class="btn btn-success w-100" onclick="connectAlpaca()">Connect</button>
         </div>
-        <div class="card">
+        <div class="card fade-in">
+          <h5>🗓️ Trade Heatmap</h5>
+          <div class="calendar-heatmap" id="heatmap"></div>
+        </div>
+        <div class="card fade-in">
           <h5>📋 Trade Logs</h5>
           <table class="table table-dark table-striped text-center">
             <thead><tr><th>Time</th><th>Symbol</th><th>Action</th><th>Qty</th><th>Status</th></tr></thead>
@@ -358,6 +407,67 @@ function removeFromWatchlist(symbol) {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
 }
+const pnlData = {
+  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+  datasets: [{
+    label: 'Profit & Loss',
+    data: [200, -150, 300, 50, -100],
+    backgroundColor: 'rgba(0, 255, 242, 0.2)',
+    borderColor: '#00fff2',
+    borderWidth: 2,
+    fill: true,
+    tension: 0.4
+  }]
+};
+
+const pnlChartConfig = {
+  type: 'line',
+  data: pnlData,
+  options: {
+    plugins: {
+      legend: { labels: { color: '#fff' } }
+    },
+    scales: {
+      x: { ticks: { color: '#ccc' } },
+      y: { ticks: { color: '#ccc' } }
+    }
+  }
+};
+
+setTimeout(() => {
+  const ctx = document.getElementById('pnlChart')?.getContext('2d');
+  if (ctx) new Chart(ctx, pnlChartConfig);
+}, 500);
+function searchStock() {
+  const query = document.getElementById('searchStock').value.trim().toUpperCase();
+  const result = document.getElementById('searchResult');
+  if (!query || query.length < 2) {
+    result.innerText = 'Start typing to search';
+    return;
+  }
+  result.innerHTML = '🔄 Searching...';
+  fetch(`https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${query}&apikey=demo`)
+    .then(r => r.json()).then(data => {
+      if (data.bestMatches && data.bestMatches.length > 0) {
+        const best = data.bestMatches[0];
+        result.innerHTML = `<strong>${best['1. symbol']}</strong> - ${best['2. name']}`;
+      } else {
+        result.innerHTML = '❌ No match found';
+      }
+    }).catch(() => {
+      result.innerHTML = '⚠️ Error fetching data';
+    });
+}
+const heatmap = document.getElementById("heatmap");
+if (heatmap) {
+  for (let i = 0; i < 35; i++) {
+    const day = document.createElement("div");
+    day.className = "calendar-day";
+    if (Math.random() > 0.7) day.classList.add("active");
+    heatmap.appendChild(day);
+  }
+}
 </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
