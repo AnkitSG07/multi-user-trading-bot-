@@ -1,19 +1,18 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartBot Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="manifest" href="manifest.json" />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #e50914;
-      --accent: #f5f5f5;
-      --dark: #121212;
-      --dark-card: #1b1b1b;
-      --text: #ffffff;
+      --primary: #ffffff;
+      --secondary: #d32f2f;
+      --bg: #0e0e0e;
+      --card-bg: #161616;
+      --highlight: #f44336;
       --gray: #888;
     }
 
@@ -21,133 +20,60 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Montserrat', sans-serif;
+      font-family: 'Rubik', sans-serif;
     }
 
     body {
-      background-color: var(--dark);
-      color: var(--text);
+      background-color: var(--bg);
+      color: var(--primary);
+      overflow-x: hidden;
     }
 
     .sidebar {
       position: fixed;
       top: 0;
       left: 0;
-      width: 220px;
+      width: 230px;
       height: 100vh;
-      background-color: #000;
+      background-color: #121212;
       padding: 2rem 1rem;
-      border-right: 1px solid #222;
-      z-index: 1000;
+      border-right: 1px solid #2a2a2a;
     }
 
     .sidebar h3 {
-      font-size: 1.7rem;
-      color: var(--primary);
+      color: var(--highlight);
+      font-weight: bold;
       margin-bottom: 2rem;
     }
 
     .sidebar a {
-      display: block;
       color: var(--gray);
-      margin-bottom: 1.2rem;
       text-decoration: none;
-      transition: all 0.2s;
+      margin-bottom: 1.2rem;
+      display: block;
       font-weight: 500;
+      transition: 0.3s;
     }
 
     .sidebar a:hover {
-      color: var(--accent);
-      transform: translateX(4px);
+      color: var(--highlight);
+      transform: translateX(5px);
     }
 
     .main-content {
-      margin-left: 240px;
+      margin-left: 230px;
       padding: 2rem;
     }
 
     header {
+      background-color: var(--card-bg);
+      padding: 1.5rem 2rem;
+      border-radius: 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: var(--dark-card);
-      border-radius: 12px;
-      padding: 1.5rem 2rem;
-      box-shadow: 0 2px 10px rgba(255, 255, 255, 0.05);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
       margin-bottom: 2rem;
-    }
-
-    header h2 {
-      font-weight: 600;
-      font-size: 1.8rem;
-    }
-
-    .btn-theme {
-      background-color: #f5f5f5;
-      color: #000;
-      border: none;
-      padding: 0.5rem 1.2rem;
-      font-weight: bold;
-      border-radius: 8px;
-      margin-right: 1rem;
-    }
-
-    .btn-logout {
-      background-color: var(--primary);
-      color: white;
-      font-weight: bold;
-      border: none;
-      padding: 0.5rem 1.2rem;
-      border-radius: 8px;
-    }
-
-    .card {
-      background-color: var(--dark-card);
-      border-radius: 14px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      border: 1px solid #222;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.2);
-    }
-
-    .card h5 {
-      font-weight: 600;
-      color: var(--accent);
-    }
-
-    select, input {
-      background-color: #000;
-      color: white;
-      border: 1px solid #333;
-      border-radius: 6px;
-      padding: 0.6rem 1rem;
-    }
-
-    .watchlist-badge {
-      background-color: var(--primary);
-      color: white;
-      padding: 0.4rem 0.9rem;
-      border-radius: 12px;
-      display: inline-block;
-      margin: 0.3rem;
-    }
-
-    iframe {
-      border-radius: 10px;
-    }
-
-    #popup {
-      display: none;
-      position: fixed;
-      top: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #222;
-      color: white;
-      padding: 1rem 2rem;
-      border-radius: 10px;
-      border: 1px solid var(--primary);
-      z-index: 2000;
     }
 
     .logo-container {
@@ -158,22 +84,91 @@
 
     .logo-container img {
       width: 40px;
-      height: 40px;
     }
 
     .logo-container span {
       font-size: 1.5rem;
+      color: var(--primary);
       font-weight: 600;
-      color: var(--accent);
+    }
+
+    .btn-theme, .btn-logout {
+      padding: 0.5rem 1.2rem;
+      border: none;
+      font-weight: 500;
+      border-radius: 8px;
+    }
+
+    .btn-theme {
+      background-color: #fff;
+      color: #000;
+      margin-right: 1rem;
+    }
+
+    .btn-logout {
+      background-color: var(--highlight);
+      color: #fff;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid #2e2e2e;
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .card h5 {
+      margin-bottom: 1rem;
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    select, input[type="text"], input[type="password"] {
+      background-color: #000;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      color: #fff;
+      width: 100%;
+    }
+
+    .watchlist-badge {
+      display: inline-block;
+      background-color: var(--highlight);
+      padding: 0.3rem 0.8rem;
+      border-radius: 12px;
+      margin: 0.3rem;
+      font-size: 0.85rem;
+    }
+
+    #popup {
+      display: none;
+      position: fixed;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #1e1e1e;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      border: 1px solid var(--highlight);
+      z-index: 2000;
+    }
+
+    iframe {
+      border: none;
+      border-radius: 12px;
     }
 
     @media (max-width: 768px) {
       .sidebar {
         position: static;
         width: 100%;
-        height: auto;
-        flex-direction: row;
+        display: flex;
         justify-content: space-around;
+        flex-direction: row;
       }
       .main-content {
         margin-left: 0;
@@ -183,21 +178,24 @@
   </style>
 </head>
 <body>
-    <div class="sidebar">
-    <h3>📊 SmartBot</h3>
+  <div class="sidebar">
+    <h3>SmartBot</h3>
     <a href="#portfolio">💼 Portfolio</a>
     <a href="#strategy">📈 Strategy</a>
     <a href="#watchlist">📌 Watchlist</a>
     <a href="#logs">📋 Logs</a>
     <a href="#trades">🔥 Trades</a>
   </div>
-  
+
   <div class="main-content">
-    <header class="gradient-header">
-      <h2>📈 Smart Trading Dashboard</h2>
+    <header>
+      <div class="logo-container">
+        <img src="/logo.png" alt="Logo">
+        <span>Smart Trading Dashboard</span>
+      </div>
       <div>
-        <button class="btn btn-warning me-2" onclick="toggleTheme()">🌓 Theme</button>
-        <button class="btn btn-danger" onclick="logout()">Logout</button>
+        <button class="btn-theme" onclick="toggleTheme()">🌓 Theme</button>
+        <button class="btn-logout" onclick="logout()">Logout</button>
       </div>
     </header>
 
