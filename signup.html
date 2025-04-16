@@ -2,117 +2,172 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Login - SmartBot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Create Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
-      padding: 2rem;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to bottom, #05002b, #122661);
-      color: white;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top left, #1c1c1e, #0a0a0a);
+      height: 100vh;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
+      position: relative;
+      overflow: hidden;
     }
-    h2 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
+
+    /* Moving glowing shapes */
+    .glow {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, #3a86ff55, transparent);
+      animation: float 6s ease-in-out infinite;
+      border-radius: 50%;
+      z-index: 0;
     }
-    .form-box {
+
+    .glow.one {
+      top: -100px;
+      left: -100px;
+    }
+
+    .glow.two {
+      bottom: -100px;
+      right: -100px;
+      animation-delay: 3s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(30px); }
+    }
+
+    .login-box {
+      background: #121212;
+      padding: 3rem;
+      border-radius: 20px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
       width: 100%;
       max-width: 400px;
+      z-index: 2;
+      position: relative;
     }
+
+    .login-box img {
+      display: block;
+      width: 60px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .login-box h2 {
+      color: #fff;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    label {
+      font-size: 0.9rem;
+      color: #bbb;
+    }
+
     input {
       width: 100%;
-      padding: 1rem;
-      margin: 0.5rem 0;
-      border: none;
-      border-radius: 30px;
-      background-color: #e8e8e8;
+      padding: 0.9rem;
+      margin-top: 0.3rem;
+      margin-bottom: 1rem;
+      background: #1f1f1f;
+      border: 1px solid #333;
+      border-radius: 12px;
+      color: white;
       font-size: 1rem;
     }
-    button {
+
+    input:focus {
+      outline: none;
+      border-color: #3a86ff;
+      box-shadow: 0 0 0 1px #3a86ff88;
+    }
+
+    .login-btn {
       width: 100%;
-      padding: 1rem;
-      margin-top: 1rem;
+      padding: 0.9rem;
+      background: linear-gradient(135deg, #3a86ff, #8338ec);
       border: none;
-      border-radius: 30px;
-      background-color: #28c745;
+      border-radius: 14px;
       color: white;
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: bold;
       cursor: pointer;
+      transition: 0.2s ease;
     }
-    button:hover {
-      background-color: #22a838;
+
+    .login-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 18px rgba(131, 56, 236, 0.4);
     }
-    .captcha-img {
-      width: 100%;
-      height: auto;
-      border-radius: 8px;
-      margin: 0.5rem 0;
+
+    .switch-link {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .switch-link a {
+      color: #3a86ff;
+      text-decoration: none;
+    }
+
+    .switch-link a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
 
-  <h2>Create Profile</h2>
+  <!-- Moving background glows -->
+  <div class="glow one"></div>
+  <div class="glow two"></div>
 
-  <div class="form-box">
-    <input type="text" id="name" placeholder="👤 Name" />
-    <input type="email" id="email" placeholder="✉️ Email" />
-    <input type="text" id="mobile" placeholder="📇 Mobile Number" />
-    <input type="text" id="username" placeholder="👥 Choose Username" />
-    <input type="password" id="password" placeholder="🔒 Password" />
+  <div class="login-box">
+    <img src="logo.png" alt="SmartBot Logo" />
+    <h2>Welcome Back</h2>
+    <form id="loginForm" onsubmit="loginUser(event)">
+      <label for="userId">User ID</label>
+      <input type="text" id="userId" required />
 
-    <!-- Captcha (static for now) -->
-    <img src="https://dummyimage.com/300x80/ffffff/007bff&text=XnAW3" alt="CAPTCHA" class="captcha-img" />
-    <input type="text" id="captcha" placeholder="🔐 Enter Captcha" />
+      <label for="password">Password</label>
+      <input type="password" id="password" required />
 
-    <button onclick="signUp()">🚀 Sign Up</button>
+      <button type="submit" class="login-btn">Login</button>
+    </form>
+    <div class="switch-link">
+      New user? <a href="signup.html">Create Account</a>
+    </div>
   </div>
 
   <script>
-    function signUp() {
-      const name = document.getElementById("name").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const mobile = document.getElementById("mobile").value.trim();
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const captcha = document.getElementById("captcha").value.trim();
+    function loginUser(event) {
+      event.preventDefault();
+      const userId = document.getElementById('userId').value;
+      const password = document.getElementById('password').value;
 
-      if (!name || !email || !mobile || !username || !password || !captcha) {
-        alert("❌ Please fill all fields correctly.");
-        return;
-      }
-
-      // ✅ Optional: check CAPTCHA
-      if (captcha.toLowerCase() !== "xnaw3") {
-        alert("❌ Invalid captcha");
-        return;
-      }
-
-      // ✅ POST request to backend
-      fetch("https://multi-user-trading-bot.onrender.com/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: username,
-          password: password
-        })
+      fetch('https://multi-user-trading-bot.onrender.com/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, password })
       })
       .then(res => res.json())
       .then(data => {
-        if (data.status === "success") {
-          alert("✅ Signup successful! You can now login.");
-          window.location.href = "login.html";
+        if (data.status === 'success') {
+          localStorage.setItem('userId', userId);
+          window.location.href = 'dashboard.html';
         } else {
-          alert("❌ " + (data.message || "Signup failed"));
+          alert('❌ ' + (data.message || 'Login failed'));
         }
-      })
-      .catch(() => {
-        alert("❌ Network error. Please try again later.");
       });
     }
   </script>
