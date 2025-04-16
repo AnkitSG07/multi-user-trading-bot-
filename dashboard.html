@@ -8,14 +8,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --background: #0d0d0d;
-      --foreground: #fdfdfd;
-      --accent: #00f3bc;
-      --highlight: #1f1f22;
-      --card-bg: #212124;
-      --border: #383838;
+      --background: #0f0f10;
+      --foreground: #fefefe;
+      --accent: #00ffd5;
+      --highlight: #1d1e22;
+      --card-bg: #202124;
+      --border: #2e2e2e;
       --danger: #ff3d00;
-      --radius: 16px;
+      --radius: 20px;
     }
 
     * {
@@ -28,12 +28,15 @@
     body {
       background: var(--background);
       color: var(--foreground);
-      display: flex;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 100vh;
     }
 
     .sidebar {
-      width: 240px;
-      height: 100vh;
       background: var(--highlight);
       padding: 2rem 1.5rem;
       border-right: 1px solid var(--border);
@@ -47,7 +50,7 @@
 
     .sidebar a {
       display: block;
-      color: #dddddd;
+      color: #d4d4d4;
       text-decoration: none;
       font-size: 1.1rem;
       margin-bottom: 1.2rem;
@@ -60,7 +63,6 @@
     }
 
     .main-content {
-      flex-grow: 1;
       padding: 2rem;
     }
 
@@ -82,20 +84,19 @@
     }
 
     .logo-container img {
-      width: 40px;
-      height: 40px;
-      object-fit: cover;
-      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
     }
 
     .logo-container span {
-      font-size: 1.5rem;
+      font-size: 1.6rem;
       color: var(--accent);
       font-weight: 700;
     }
 
     .btn-theme, .btn-logout {
-      padding: 0.5rem 1.2rem;
+      padding: 0.5rem 1.5rem;
       border-radius: 12px;
       font-weight: 600;
       border: none;
@@ -112,12 +113,17 @@
       color: #fff;
     }
 
+    .dashboard-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 2rem;
-      margin-bottom: 2rem;
       color: var(--foreground);
     }
 
@@ -169,38 +175,41 @@
     iframe {
       border-radius: var(--radius);
       width: 100%;
+      border: none;
     }
 
     @media (max-width: 768px) {
-      body {
-        flex-direction: column;
+      .grid-container {
+        grid-template-columns: 1fr;
       }
       .sidebar {
-        width: 100%;
-        height: auto;
         display: flex;
         justify-content: space-around;
-        padding: 1rem;
-      }
-      .main-content {
-        margin-left: 0;
-        padding: 1rem;
       }
     }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <h3>SmartBot</h3>
-    <a href="#portfolio">💼 Portfolio</a>
-    <a href="#strategy">📈 Strategy</a>
-    <a href="#watchlist">📌 Watchlist</a>
-    <a href="#logs">📋 Logs</a>
-    <a href="#trades">🔥 Trades</a>
-  </div>
-
-  <div class="main-content">
-    <header>
+  <div class="grid-container">
+    <div class="sidebar">
+      <h3>SmartBot</h3>
+      <a href="#portfolio">💼 Portfolio</a>
+      <a href="#strategy">📈 Strategy</a>
+      <a href="#watchlist">📌 Watchlist</a>
+      <a href="#logs">📋 Logs</a>
+      <a href="#trades">🔥 Trades</a>
+    </div>
+    <div class="main-content">
+      <header>
+        <div class="logo-container">
+          <img src="/logo.png" alt="Logo">
+          <span>Smart Trading Dashboard</span>
+        </div>
+        <div>
+          <button class="btn-theme" onclick="toggleTheme()">🌓 Theme</button>
+          <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+      </header>
       <div class="logo-container">
         <img src="/logo.png" alt="Logo">
         <span>Smart Trading Dashboard</span>
