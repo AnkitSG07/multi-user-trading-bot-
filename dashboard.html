@@ -25,6 +25,18 @@
       color: var(--text);
       margin: 0;
     }
+
+     .market-banner {
+       background: #111;
+       color: var(--primary);
+       text-align: center;
+       padding: 0.5rem;
+       font-size: 0.95rem;
+       font-weight: 600;
+       border-bottom: 1px solid #222;
+       white-space: nowrap;
+       overflow: auto;
+     }
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -201,6 +213,9 @@
   </style>
 </head>
 <body>
+  <div class="market-banner" id="marketBanner">
+  📈 Loading market data...
+  </div>
   <div class="navbar">
     <div class="brand">
       <button class="hamburger" onclick="toggleSidebar()">☰</button>
@@ -340,6 +355,31 @@ function toggleTheme() {
   html.setAttribute("data-theme", isDark ? "light" : "dark");
   updateChart("AAPL");
 }
+
+function updateMarketBanner() {
+    const top20 = [
+      "AAPL", "TSLA", "GOOG", "AMZN", "MSFT", "NVDA", "META", "NFLX",
+      "BABA", "AMD", "INTC", "ORCL", "CRM", "PYPL", "QCOM", "ADBE",
+      "PEP", "KO", "NKE", "VZ"
+    ];
+    fetch(`https://api.twelvedata.com/quote?symbol=${top20.join(",")}&apikey=demo`)
+      .then(r => r.json())
+      .then(data => {
+        let html = "";
+        top20.forEach(ticker => {
+          const item = data[ticker] || {};
+          if (item.close) {
+            html += `${ticker}: $${item.close} (${item.percent_change}%) | `;
+          }
+        });
+        document.getElementById("marketBanner").innerText = html.slice(0, -3);
+      })
+      .catch(() => {
+        document.getElementById("marketBanner").innerText = "⚠️ Failed to fetch market data.";
+      });
+  }
+  updateMarketBanner();
+  setInterval(updateMarketBanner, 60000);
   
  function askBot() {
     const input = document.getElementById('chatInput').value.trim();
