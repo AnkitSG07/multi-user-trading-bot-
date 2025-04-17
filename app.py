@@ -7,7 +7,7 @@ import requests
 import hashlib
 from datetime import datetime
 from cryptography.fernet import Fernet
-import openai
+import google.generativeai as genai
 
 fernet = Fernet(os.environ["FERNET_KEY"])
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
