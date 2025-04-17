@@ -7,6 +7,7 @@ import requests
 import hashlib
 from datetime import datetime
 from cryptography.fernet import Fernet
+import openai
 
 fernet = Fernet(os.environ["FERNET_KEY"])
 
@@ -108,6 +109,24 @@ def safe_bot(user_id):
 @app.route("/")
 def home():
     return '<script>window.location.href="/login.html";</script>'
+
+@app.route("/recommend-ai", methods=["POST"])
+def recommend_ai():
+    data = request.get_json()
+    user_id = data.get("user_id", "")
+
+    prompt = f"Give a 1-line smart trading suggestion for user '{user_id}' based on current market trends. Be precise and clear."
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{ "role": "user", "content": prompt }],
+            max_tokens=60
+        )
+        suggestion = response.choices[0].message['content'].strip()
+        return jsonify({ "suggestion": suggestion })
+    except Exception as e:
+        return jsonify({ "error": str(e) }), 500
 
 @app.route("/signup", methods=["POST"])
 def signup():
