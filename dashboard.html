@@ -200,7 +200,7 @@
   <div class="navbar">
     <div class="brand">
       <button class="hamburger" onclick="toggleSidebar()">☰</button>
-      <img src="/logo.png" alt="Logo">
+      <img src="logo.png" alt="Logo">
       <span>Smart Trading</span>
     </div>
     <div class="actions">
@@ -533,6 +533,13 @@ function getAIRecommendation() {
     recDiv.innerText = "❌ Error fetching AI recommendation.";
     console.error("AI Error:", err);
   });
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  sidebar.classList.toggle('show');
+  overlay.classList.toggle('visible');
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
