@@ -340,28 +340,30 @@ function toggleTheme() {
   html.setAttribute("data-theme", isDark ? "light" : "dark");
   updateChart("AAPL");
 }
+  
 function askBot() {
   const input = document.getElementById('chatInput').value.trim();
   const responseDiv = document.getElementById('chatResponse');
-  if (!input) return;
+  const user = localStorage.getItem("userId");
+  if (!input || !user) return;
   responseDiv.innerText = "🧠 Thinking...";
-  fetch("https://multi-user-trading-bot.onrender.com/recommend-ai", {
+  fetch(`https://multi-user-trading-bot.onrender.com/recommend-ai?user_id=${user}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: localStorage.getItem("userId"), prompt: input })
+    body: JSON.stringify({ prompt: input })
   })
-  .then(r => r.json())
-  .then(data => {
-    if (data.suggestion) {
-      responseDiv.innerText = "💡 " + data.suggestion;
-    } else {
-      responseDiv.innerText = "⚠️ Could not fetch suggestion.";
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    responseDiv.innerText = "❌ Error reaching assistant.";
-  });
+    .then(r => r.json())
+    .then(data => {
+      if (data.suggestion) {
+        responseDiv.innerText = "💡 " + data.suggestion;
+      } else {
+        responseDiv.innerText = "⚠️ Could not fetch suggestion.";
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      responseDiv.innerText = "❌ Error reaching assistant.";
+    });
 }
 
 function fetchLivePnL() {
