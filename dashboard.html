@@ -26,17 +26,32 @@
       margin: 0;
     }
 
-     .market-banner {
-       background: #111;
-       color: var(--primary);
-       text-align: center;
-       padding: 0.5rem;
-       font-size: 0.95rem;
-       font-weight: 600;
-       border-bottom: 1px solid #222;
-       white-space: nowrap;
-       overflow: auto;
-     }
+  .market-banner {
+      background: #0f0f0f;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.6rem 1rem;
+      overflow-x: auto;
+      white-space: nowrap;
+      border-bottom: 1px solid #222;
+      display: flex;
+      gap: 2rem;
+      animation: scroll-left 40s linear infinite;
+    }
+    @keyframes scroll-left {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    .stock-item {
+      display: inline-block;
+      padding: 0 1rem;
+      font-weight: 600;
+    }
+    .up { color: #00ff99; }
+    .down { color: #ff4d4d; }
+    .neutral { color: var(--muted); }
+    
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -356,7 +371,7 @@ function toggleTheme() {
   updateChart("AAPL");
 }
 
-function updateMarketBanner() {
+  function updateMarketBanner() {
     const top20 = [
       "AAPL", "TSLA", "GOOG", "AMZN", "MSFT", "NVDA", "META", "NFLX",
       "BABA", "AMD", "INTC", "ORCL", "CRM", "PYPL", "QCOM", "ADBE",
@@ -368,18 +383,20 @@ function updateMarketBanner() {
         let html = "";
         top20.forEach(ticker => {
           const item = data[ticker] || {};
-          if (item.close) {
-            html += `${ticker}: $${item.close} (${item.percent_change}%) | `;
+          if (item.close && item.percent_change) {
+            const change = parseFloat(item.percent_change);
+            const cls = change > 0 ? "up" : change < 0 ? "down" : "neutral";
+            html += `<span class='stock-item ${cls}'>📈 ${ticker}: $${item.close} (${item.percent_change}%)</span>`;
           }
         });
-        document.getElementById("marketBanner").innerText = html.slice(0, -3);
+        document.getElementById("marketBanner").innerHTML = html;
       })
       .catch(() => {
         document.getElementById("marketBanner").innerText = "⚠️ Failed to fetch market data.";
       });
   }
   updateMarketBanner();
-  setInterval(updateMarketBanner, 60000);
+  setInterval(updateMarketBanner, 30000);
   
  function askBot() {
     const input = document.getElementById('chatInput').value.trim();
