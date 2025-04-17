@@ -131,15 +131,15 @@ def recommend_ai():
     prompt = f"Give a 1-line smart trading suggestion for user '{user_id}' based on current market trends. Be precise and clear."
 
     try:
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{ "role": "user", "content": prompt }],
             max_tokens=60
         )
-        suggestion = response.choices[0].message['content'].strip()
+        suggestion = response.choices[0].message.content.strip()
         return jsonify({ "suggestion": suggestion })
     except Exception as e:
-        print("🔥 OpenAI Error:", str(e))  # Log error to Render console
+        print("🔥 OpenAI Error:", str(e))
         return jsonify({ "error": str(e) }), 500
 
 @app.route("/signup", methods=["POST"])
