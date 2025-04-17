@@ -222,6 +222,24 @@
     <div class="main">
       <div class="grid">
         <div class="card">
+          <h5>👋 Welcome, <span id="greetingUser">User</span></h5>
+        </div>
+        <div class="card">
+          <h5>🔐 Connect Alpaca API</h5>
+          <input type="text" id="alpacaKey" placeholder="API Key">
+          <input type="text" id="alpacaSecret" placeholder="Secret Key">
+          <button class="btn btn-success w-100" onclick="connectAlpaca()">Connect</button>
+        </div>
+        <div class="card">
+          <h5>📊 Select Strategy</h5>
+          <select id="strategy" onchange="updateStrategy()">
+            <option value="balanced">Balanced</option>
+            <option value="momentum">Momentum</option>
+            <option value="reversal">Reversal</option>
+            <option value="volume_spike">Volume Spike</option>
+          </select>
+        </div>
+        <div class="card">
           <h5>🧠 AI Trade Recommender</h5>
           <p style="font-size: 0.95rem; color: var(--muted);">Click below to receive a smart suggestion based on market change patterns and your selected strategy.</p>
           <button class="btn btn-outline-warning w-100" onclick="getAIRecommendation()">Get Recommendation</button>
@@ -251,18 +269,6 @@
           <canvas id="pnlChart" height="200"></canvas>
         </div>
         <div class="card">
-          <h5>👋 Welcome, <span id="greetingUser">User</span></h5>
-        </div>
-        <div class="card">
-          <h5>📊 Select Strategy</h5>
-          <select id="strategy" onchange="updateStrategy()">
-            <option value="balanced">Balanced</option>
-            <option value="momentum">Momentum</option>
-            <option value="reversal">Reversal</option>
-            <option value="volume_spike">Volume Spike</option>
-          </select>
-        </div>
-        <div class="card">
           <h5>🤖 Choose Trading Bot</h5>
           <button class="btn btn-outline-light w-100" onclick="location.href='bot-selection.html'">Choose Bot</button>
         </div>
@@ -274,12 +280,6 @@
             <li>💵 Total Equity: <span id="equity">--</span></li>
             <li>📊 Unrealized P/L: <span id="pnl">--</span></li>
           </ul>
-        </div>
-        <div class="card">
-          <h5>🔐 Connect Alpaca API</h5>
-          <input type="text" id="alpacaKey" placeholder="API Key">
-          <input type="text" id="alpacaSecret" placeholder="Secret Key">
-          <button class="btn btn-success w-100" onclick="connectAlpaca()">Connect</button>
         </div>
         <div class="card fade-in">
           <h5>🗓️ Trade Heatmap</h5>
