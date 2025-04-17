@@ -126,31 +126,59 @@ def get_logs(user_id):
 
 @app.route("/recommend-ai", methods=["POST"])
 def recommend_ai():
+
+    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
     model = GenerativeModel("gemini-1.5-flash")
+
+    user_id = request.args.get("user_id", "")
     data = request.get_json()
-    user_id = data.get("user_id", "")
     prompt = data.get("prompt", "")
 
-    # Optional: fetch strategy or portfolio here to inject into prompt
-    strategy = "balanced"  # Default fallback
     users = load_users()
-    if user_id in users:
-        strategy = users[user_id].get("strategy", "balanced")
+    if user_id not in users:
+        return jsonify({"suggestion": "User not found."}), 404
 
-    system_instruction = (
-        "You are a professional stock market analyst and AI trading assistant. "
-        "Analyze the question in context of live strategy: '" + strategy + "'. "
-        "Give expert-level insights, suggestions, and clear buy/sell calls. "
-        "Explain reasoning in a friendly, professional tone."
-    )
+    user = users[user_id]
+    strategy = user.get("strategy", "balanced")
+    watchlist = ", ".join(user.get("watchlist", []))
+
+    # Get portfolio info
+    try:
+        api_key = fernet.decrypt(user["api_key"].encode()).decode()
+        secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
+        api = tradeapi.REST(api_key, secret_key, base_url="https://paper-api.alpaca.markets")
+        account = api.get_account()
+        positions = api.list_positions()
+        cash = round(float(account.cash), 2)
+        equity = round(float(account.equity), 2)
+        market_value = round(sum([float(p.market_value) for p in positions]), 2)
+        pnl = round(equity - cash, 2)
+    except:
+        cash = equity = market_value = pnl = "N/A"
+
+    context = f"""
+You are a professional AI stock trading assistant.
+
+Strategy: {strategy}
+
+Portfolio:
+- 💰 Cash: ${cash}
+- 📈 Market Value: ${market_value}
+- 💵 Total Equity: ${equity}
+- 📊 P&L: ${pnl}
+
+Watchlist: {watchlist}
+
+✅ Give direct BUY / SELL / HOLD suggestions only.
+✅ Be brief, actionable, and avoid over-explaining.
+✅ Use bullet points when possible.
+"""
 
     try:
-        response = model.generate_content(system_instruction + "\n\nUser: " + prompt)
+        response = model.generate_content(context + "\n\nUser: " + prompt)
         return jsonify({"suggestion": response.text})
     except Exception as e:
-        print("Gemini error:", e)
-        return jsonify({"suggestion": "❌ Error from AI: " + str(e)}), 500
-
+        return jsonify({"suggestion": "❌ Gemini error: " + str(e)}), 500
 
 @app.route("/signup", methods=["POST"])
 def signup():
