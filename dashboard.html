@@ -33,7 +33,7 @@
       border-bottom: 1px solid #222;
       position: sticky;
       top: 0;
-      z-index: 999;
+      z-index: 1100;
     }
     .market-banner {
       width: 100%;
@@ -70,7 +70,7 @@
       border-bottom: 1px solid #333;
       position: sticky;
       top: 36px;
-      z-index: 1000;
+      z-index: 1099;
     }
     .navbar .brand {
       display: flex;
@@ -176,7 +176,7 @@
     }
     .card table {
       width: 100%;
-      table-layout: fixed;
+      table-layout: auto;
       word-wrap: break-word;
     }
     .card table th, .card table td {
@@ -194,7 +194,7 @@
     }
     #popup {
       position: fixed;
-      top: 1rem;
+      top: 5rem;
       left: 50%;
       transform: translateX(-50%);
       background: var(--card);
@@ -203,6 +203,7 @@
       border-radius: 12px;
       border: 1px solid #333;
       display: none;
+      z-index: 2000;
     }
     .overlay {
       display: none;
