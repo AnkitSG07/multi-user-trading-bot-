@@ -25,23 +25,35 @@
       color: var(--text);
       margin: 0;
     }
-     .market-banner {
+    .market-banner-wrapper {
+      overflow-x: hidden;
       background: #0f0f0f;
-      color: var(--text);
-      font-size: 0.9rem;
-      font-weight: 500;
-      padding: 0.6rem 1rem;
-      overflow-x: auto;
-      white-space: nowrap;
       border-bottom: 1px solid #222;
-      display: flex;
-      gap: 2rem;
-      animation: scroll-left 40s linear infinite;
       position: sticky;
       top: 0;
       z-index: 999;
     }
-  
+    .market-banner {
+      display: inline-block;
+      white-space: nowrap;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      animation: scroll-left 60s linear infinite;
+    }
+    @keyframes scroll-left {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    .stock-item {
+      display: inline-block;
+      padding: 0 1rem;
+      font-weight: 600;
+    }
+    .up { color: #00ff99; }
+    .down { color: #ff4d4d; }
+    .neutral { color: var(--muted); }
+    
     .navbar {
       display: flex;
       justify-content: space-between;
