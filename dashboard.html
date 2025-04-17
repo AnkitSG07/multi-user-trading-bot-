@@ -341,21 +341,55 @@ function toggleTheme() {
   updateChart("AAPL");
 }
   
-function askBot() {
-  const input = document.getElementById('chatInput').value.trim();
-  const responseDiv = document.getElementById('chatResponse');
-  const user = localStorage.getItem("userId");
-  if (!input || !user) return;
-  responseDiv.innerText = "🧠 Thinking...";
-  fetch(`https://multi-user-trading-bot.onrender.com/recommend-ai?user_id=${user}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: input })
-  })
+ function askBot() {
+    const input = document.getElementById('chatInput').value.trim();
+    const responseDiv = document.getElementById('chatResponse');
+    const user = localStorage.getItem("userId");
+    if (!input || !user) return;
+
+    const greetings = ["hi", "hello", "hey", "yo", "what's up"];
+    const isGreeting = greetings.some(word => input.toLowerCase().includes(word));
+    if (isGreeting) {
+      responseDiv.innerText = "👋 Hello! How can I help with your trading today?";
+      return;
+    }
+
+    const keywords = {
+      market: ["market today", "today's market", "happened today"],
+      explain: ["explain", "about", "what is"],
+      chart: ["chart of", "show", "graph"],
+    };
+
+    responseDiv.innerText = "🧠 Thinking...";
+
+    fetch(`https://multi-user-trading-bot.onrender.com/recommend-ai?user_id=${user}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: input })
+    })
     .then(r => r.json())
     .then(data => {
       if (data.suggestion) {
-        responseDiv.innerText = "💡 " + data.suggestion;
+        responseDiv.innerHTML = data.suggestion.startsWith('<') ? data.suggestion : `💡 ${data.suggestion}`;
+        if (data.auto_trade) {
+          const btn = document.createElement('button');
+          btn.className = "btn btn-sm btn-outline-success mt-2";
+          btn.innerText = `🔁 Auto-Trade: ${data.auto_trade.symbol} (${data.auto_trade.action})`;
+          btn.onclick = () => {
+            fetch(`https://multi-user-trading-bot.onrender.com/webhook/${user}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                symbol: data.auto_trade.symbol,
+                action: data.auto_trade.action,
+                quantity: 1
+              })
+            }).then(res => res.json()).then(d => {
+              alert(d.message || "✅ Auto trade complete");
+            });
+          };
+          responseDiv.appendChild(btn);
+        }
       } else {
         responseDiv.innerText = "⚠️ Could not fetch suggestion.";
       }
@@ -364,7 +398,7 @@ function askBot() {
       console.error(err);
       responseDiv.innerText = "❌ Error reaching assistant.";
     });
-}
+  }
 
 function fetchLivePnL() {
   const user = localStorage.getItem("userId");
