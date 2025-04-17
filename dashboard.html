@@ -477,17 +477,24 @@ if (heatmap) {
 function getAIRecommendation() {
   const recDiv = document.getElementById("ai-recommendation");
   recDiv.innerText = "🤖 Thinking...";
-  setTimeout(() => {
-    const suggestions = [
-      "Buy TSLA – Momentum is high this week 🚀",
-      "Hold AAPL – Market is consolidating 📉",
-      "Sell NFLX – Downtrend after earnings ⚠️",
-      "Watch AMZN – Strong volume surge 💹",
-      "Re-enter INFY – Recovery likely 📈"
-    ];
-    const random = Math.floor(Math.random() * suggestions.length);
-    recDiv.innerText = suggestions[random];
-  }, 1200);
+
+  fetch("https://multi-user-trading-bot.onrender.com/recommend-ai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: user })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.suggestion) {
+      recDiv.innerText = `🤖 ${data.suggestion}`;
+    } else {
+      recDiv.innerText = "⚠️ No recommendation received.";
+    }
+  })
+  .catch(err => {
+    recDiv.innerText = "❌ Error fetching AI recommendation.";
+    console.error("AI Error:", err);
+  });
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
