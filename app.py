@@ -10,7 +10,7 @@ from cryptography.fernet import Fernet
 import openai
 
 fernet = Fernet(os.environ["FERNET_KEY"])
-openai.api_key = os.getenv("OPENAI_API_KEY")
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -131,15 +131,12 @@ def recommend_ai():
     prompt = f"Give a 1-line smart trading suggestion for user '{user_id}' based on current market trends. Be precise and clear."
 
     try:
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{ "role": "user", "content": prompt }],
-            max_tokens=60
-        )
-        suggestion = response.choices[0].message.content.strip()
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+        suggestion = response.text.strip()
         return jsonify({ "suggestion": suggestion })
     except Exception as e:
-        print("🔥 OpenAI Error:", str(e))
+        print("🔥 Gemini Error:", str(e))
         return jsonify({ "error": str(e) }), 500
 
 @app.route("/signup", methods=["POST"])
