@@ -110,6 +110,18 @@ def safe_bot(user_id):
 def home():
     return '<script>window.location.href="/login.html";</script>'
 
+@app.route("/logs/<user_id>", methods=["GET"])
+def get_logs(user_id):
+    log_file = f"logs/{user_id}.json"
+    if not os.path.exists(log_file):
+        return jsonify([])
+    try:
+        with open(log_file, "r") as f:
+            return jsonify(json.load(f))
+    except:
+        return jsonify([])
+
+
 @app.route("/recommend-ai", methods=["POST"])
 def recommend_ai():
     data = request.get_json()
