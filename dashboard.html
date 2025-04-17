@@ -25,8 +25,7 @@
       color: var(--text);
       margin: 0;
     }
-
-  .market-banner {
+     .market-banner {
       background: #0f0f0f;
       color: var(--text);
       font-size: 0.9rem;
@@ -38,6 +37,9 @@
       display: flex;
       gap: 2rem;
       animation: scroll-left 40s linear infinite;
+      position: sticky;
+      top: 0;
+      z-index: 999;
     }
     @keyframes scroll-left {
       0% { transform: translateX(100%); }
@@ -51,6 +53,7 @@
     .up { color: #00ff99; }
     .down { color: #ff4d4d; }
     .neutral { color: var(--muted); }
+
     
     .navbar {
       display: flex;
