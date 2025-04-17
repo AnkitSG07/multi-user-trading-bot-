@@ -37,14 +37,18 @@
       z-index: 1000;
     }
     .navbar .brand {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
     .navbar .brand img {
-      height: 40px;
-      width: 40px;
-    }
+  height: 50px;
+  width: auto;
+  margin-left: 0.5rem;
+  margin-right: 0.8rem;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(0, 255, 242, 0.4);
+}
     .navbar .brand span {
       font-size: 1.4rem;
       font-weight: 700;
@@ -71,13 +75,13 @@
       color: #fff;
     }
     .hamburger {
-      display: none;
-      font-size: 1.5rem;
-      background: none;
-      border: none;
-      color: var(--text);
-      margin-right: 1rem;
-    }
+  display: none;
+  font-size: 2rem;
+  background: none;
+  border: none;
+  color: var(--text);
+  margin-right: 0.5rem;
+}
 
     .layout {
       display: flex;
@@ -200,7 +204,7 @@
   <div class="navbar">
     <div class="brand">
       <button class="hamburger" onclick="toggleSidebar()">☰</button>
-      <img src="logo.png" alt="Logo">
+      <img src="/logo.png" alt="Logo">
       <span>Smart Trading</span>
     </div>
     <div class="actions">
