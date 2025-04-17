@@ -158,6 +158,7 @@
       padding: 2rem;
       color: var(--text);
       box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      overflow-x: auto;
     }
     .card h5 {
       color: var(--primary);
@@ -172,6 +173,15 @@
       border-radius: 12px;
       color: var(--text);
       margin-bottom: 1rem;
+    }
+    .card table {
+      width: 100%;
+      table-layout: fixed;
+      word-wrap: break-word;
+    }
+    .card table th, .card table td {
+      padding: 0.75rem;
+      word-break: break-word;
     }
     .badge {
       background: var(--primary);
