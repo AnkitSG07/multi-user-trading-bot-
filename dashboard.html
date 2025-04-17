@@ -32,6 +32,9 @@
       padding: 1.2rem 2rem;
       background: var(--card);
       border-bottom: 1px solid #333;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
     .navbar .brand {
       display: flex;
@@ -47,11 +50,16 @@
       font-weight: 700;
       color: var(--primary);
     }
-    .navbar .actions button {
+    .navbar .actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    .navbar .btn-theme,
+    .navbar .btn-logout {
       border: none;
       border-radius: var(--radius);
       padding: 0.5rem 1.2rem;
-      margin-left: 1rem;
       font-weight: 600;
     }
     .navbar .btn-theme {
@@ -62,15 +70,26 @@
       background: var(--danger);
       color: #fff;
     }
+    .hamburger {
+      display: none;
+      font-size: 1.5rem;
+      background: none;
+      border: none;
+      color: var(--text);
+      margin-right: 1rem;
+    }
+
     .layout {
-      display: grid;
-      grid-template-columns: 240px 1fr;
+      display: flex;
       height: calc(100vh - 80px);
+      overflow: hidden;
     }
     .sidebar {
       background: #141417;
       padding: 2rem 1rem;
       border-right: 1px solid #2e2e2e;
+      width: 240px;
+      transition: transform 0.3s ease;
     }
     .sidebar a {
       display: block;
@@ -85,6 +104,7 @@
       padding-left: 8px;
     }
     .main {
+      flex: 1;
       padding: 2rem;
       overflow-y: auto;
     }
@@ -135,34 +155,51 @@
       border: 1px solid #333;
       display: none;
     }
-    .fade-in {
-    animation: fadeIn 0.8s ease-in-out;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .calendar-heatmap {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    margin-top: 1rem;
-  }
-  .calendar-day {
-    width: 20px;
-    height: 20px;
-    background: #333;
-    border-radius: 4px;
-    transition: 0.2s ease;
-  }
-  .calendar-day.active {
-    background: var(--primary);
-  }
-</style>
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+    .sidebar.hidden {
+      transform: translateX(-100%);
+      position: fixed;
+      height: 100vh;
+      z-index: 1000;
+      top: 80px;
+      left: 0;
+    }
+    .overlay.visible {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .hamburger {
+        display: block;
+      }
+      .sidebar {
+        transform: translateX(-100%);
+        position: fixed;
+        top: 80px;
+        left: 0;
+        height: 100vh;
+        background-color: #141417;
+        z-index: 1000;
+      }
+      .sidebar.show {
+        transform: translateX(0);
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="navbar">
     <div class="brand">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
       <img src="/logo.png" alt="Logo">
       <span>Smart Trading</span>
     </div>
@@ -171,8 +208,9 @@
       <button class="btn-logout" onclick="logout()">Logout</button>
     </div>
   </div>
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
   <div class="layout">
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
       <a href="#portfolio">💼 Portfolio</a>
       <a href="#strategy">📈 Strategy</a>
       <a href="#watchlist">📌 Watchlist</a>
