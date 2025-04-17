@@ -127,7 +127,6 @@ def get_logs(user_id):
 @app.route("/recommend-ai", methods=["POST"])
 def recommend_ai():
 
-    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
     model = GenerativeModel("gemini-1.5-flash")
 
     user_id = request.args.get("user_id", "")
