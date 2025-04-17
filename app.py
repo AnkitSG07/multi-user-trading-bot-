@@ -126,6 +126,7 @@ def get_logs(user_id):
 
 @app.route("/recommend-ai", methods=["POST"])
 def recommend_ai():
+    model = GenerativeModel("gemini-1.5-flash")
     data = request.get_json()
     user_id = data.get("user_id", "")
     prompt = data.get("prompt", "")
