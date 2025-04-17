@@ -8,6 +8,7 @@ import hashlib
 from datetime import datetime
 from cryptography.fernet import Fernet
 import google.generativeai as genai
+from google.generativeai import GenerativeModel
 
 fernet = Fernet(os.environ["FERNET_KEY"])
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -127,17 +128,28 @@ def get_logs(user_id):
 def recommend_ai():
     data = request.get_json()
     user_id = data.get("user_id", "")
+    prompt = data.get("prompt", "")
 
-    prompt = f"Give a 1-line smart trading suggestion for user '{user_id}' based on current market trends. Be precise and clear."
+    # Optional: fetch strategy or portfolio here to inject into prompt
+    strategy = "balanced"  # Default fallback
+    users = load_users()
+    if user_id in users:
+        strategy = users[user_id].get("strategy", "balanced")
+
+    system_instruction = (
+        "You are a professional stock market analyst and AI trading assistant. "
+        "Analyze the question in context of live strategy: '" + strategy + "'. "
+        "Give expert-level insights, suggestions, and clear buy/sell calls. "
+        "Explain reasoning in a friendly, professional tone."
+    )
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content(prompt)
-        suggestion = response.text.strip()
-        return jsonify({ "suggestion": suggestion })
+        response = model.generate_content(system_instruction + "\n\nUser: " + prompt)
+        return jsonify({"suggestion": response.text})
     except Exception as e:
-        print("🔥 Gemini Error:", str(e))
-        return jsonify({ "error": str(e) }), 500
+        print("Gemini error:", e)
+        return jsonify({"suggestion": "❌ Error from AI: " + str(e)}), 500
+
 
 @app.route("/signup", methods=["POST"])
 def signup():
