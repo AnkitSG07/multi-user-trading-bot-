@@ -27,12 +27,16 @@
       color: var(--text);
       overflow-x: hidden;
     }
+    body {
+      padding-top: 140px; /* Offset for banner + header */
+    }
     .market-banner-wrapper {
       overflow: hidden;
       background: #0f0f0f;
       border-bottom: 1px solid #222;
-      position: sticky;
+      position: fixed;
       top: 0;
+      width: 100%;
       z-index: 1100;
     }
     .market-banner {
@@ -68,8 +72,9 @@
       padding: 1.2rem 2rem;
       background: var(--card);
       border-bottom: 1px solid #333;
-      position: sticky;
-      top: 36px;
+      position: fixed;
+      top: 48px;
+      width: 100%;
       z-index: 1099;
     }
     .navbar .brand {
