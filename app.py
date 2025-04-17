@@ -139,6 +139,7 @@ def recommend_ai():
         suggestion = response.choices[0].message['content'].strip()
         return jsonify({ "suggestion": suggestion })
     except Exception as e:
+        print("🔥 OpenAI Error:", str(e))  # Log error to Render console
         return jsonify({ "error": str(e) }), 500
 
 @app.route("/signup", methods=["POST"])
@@ -282,9 +283,6 @@ def webhook(user_id):
         })
         return jsonify({"status": "error", "message": f"❌ {error_message}"}), 500
 
-
-
-
 @app.route("/portfolio/<user_id>", methods=["GET"])
 def get_portfolio(user_id):
     users = load_users()
@@ -422,6 +420,7 @@ def get_pnl_chart(user_id):
         return jsonify({"labels": labels, "data": data})
     except Exception as e:
         return jsonify({"labels": [], "data": [], "error": str(e)})
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
