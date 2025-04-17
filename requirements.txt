@@ -4,3 +4,4 @@ gunicorn
 flask-cors
 cryptography
 openai
+google.generativeai
