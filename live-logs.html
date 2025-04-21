@@ -59,12 +59,12 @@
 
 <script>
 function loadLogs() {
-  let user = localStorage.getItem("user_id");
+  let user = localStorage.getItem("userId");
 
   if (!user) {
     user = prompt("Enter your user ID to view logs:");
     if (user) {
-      localStorage.setItem("user_id", user);
+      localStorage.setItem("userId", user);
     } else {
       document.getElementById("logs").innerHTML = "❌ No user ID provided.";
       return;
