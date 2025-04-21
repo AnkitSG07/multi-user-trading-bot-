@@ -289,11 +289,26 @@
         </div>
       </div>
         <div class="card">
-          <h5>🔐 Connect Alpaca API</h5>
-          <input type="text" id="alpacaKey" placeholder="API Key">
-          <input type="text" id="alpacaSecret" placeholder="Secret Key">
-          <button class="btn btn-success w-100" onclick="connectAlpaca()">Connect</button>
+          <h5>🔐 Connect Broker API</h5>
+        
+          <!-- Broker selection dropdown -->
+          <select id="brokerSelect" onchange="toggleBrokerFields()" style="margin-bottom: 1rem;">
+            <option value="alpaca">Alpaca</option>
+            <option value="angelone">Angel One</option>
+          </select>
+        
+          <!-- Alpaca Fields -->
+          <input type="text" id="alpacaKey" placeholder="Alpaca API Key" />
+          <input type="text" id="alpacaSecret" placeholder="Alpaca Secret Key" />
+        
+          <!-- Angel One Fields -->
+          <input type="text" id="angelClientId" placeholder="Angel Client ID" style="display: none;" />
+          <input type="password" id="angelPassword" placeholder="Angel Password" style="display: none;" />
+        
+          <!-- Connect button -->
+          <button class="btn btn-success" onclick="connectBroker()">Connect</button>
         </div>
+
         <div class="card">
           <h5>📊 Select Strategy</h5>
           <select id="strategy" onchange="updateStrategy()">
@@ -420,6 +435,33 @@ function toggleTheme() {
   }
   updateMarketBanner();
   setInterval(updateMarketBanner, 30000);
+
+   function toggleBrokerFields() {
+    const broker = document.getElementById("brokerSelect").value;
+    document.getElementById("alpacaKey").style.display = broker === "alpaca" ? "block" : "none";
+    document.getElementById("angelClientId").style.display = broker === "angelone" ? "block" : "none";
+    document.getElementById("angelPassword").style.display = broker === "angelone" ? "block" : "none";
+  }
+
+  function connectBroker() {
+    const broker = document.getElementById("brokerSelect").value;
+    let payload = { broker };
+
+    if (broker === "alpaca") {
+      payload.apiKey = document.getElementById("alpacaKey").value;
+    } else if (broker === "angelone") {
+      payload.clientId = document.getElementById("angelClientId").value;
+      payload.password = document.getElementById("angelPassword").value;
+    }
+
+    fetch("/connect-broker", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(res => res.json()).then(data => {
+      alert(data.message || "Connected");
+    });
+  }
   
  function askBot() {
     const input = document.getElementById('chatInput').value.trim();
@@ -583,19 +625,36 @@ function autoTrade(symbol, action) {
   });
 }
 
-function connectAlpaca() {
-  const apiKey = document.getElementById("alpacaKey").value.trim();
-  const secretKey = document.getElementById("alpacaSecret").value.trim();
-  if (!apiKey || !secretKey) return showPopup("❌ API Key & Secret Key required", false);
+function connectBroker() {
+  const broker = document.getElementById("brokerSelect").value;
+  const user = localStorage.getItem("userId");
+  let payload = { user_id: user };
 
-  fetch("https://multi-user-trading-bot.onrender.com/connect-alpaca", {
+  if (broker === "alpaca") {
+    const apiKey = document.getElementById("alpacaKey").value.trim();
+    const secretKey = document.getElementById("alpacaSecret").value.trim();
+    if (!apiKey || !secretKey) return showPopup("❌ API Key & Secret Key required", false);
+    payload.api_key = apiKey;
+    payload.secret_key = secretKey;
+  } else if (broker === "angelone") {
+    const clientId = document.getElementById("angelClientId").value.trim();
+    const password = document.getElementById("angelPassword").value.trim();
+    if (!clientId || !password) return showPopup("❌ Client ID & Password required", false);
+    payload.client_id = clientId;
+    payload.password = password;
+  }
+
+  fetch(`https://multi-user-trading-bot.onrender.com/connect-${broker}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: user, api_key: apiKey, secret_key: secretKey })
-  }).then(r => r.json()).then(d => {
-    showPopup(d.message || (d.status === "success" ? "✅ Connected!" : "❌ Failed"), d.status === "success");
-  });
+    body: JSON.stringify(payload)
+  })
+    .then(r => r.json())
+    .then(d => {
+      showPopup(d.message || (d.status === "success" ? "✅ Connected!" : "❌ Failed"), d.status === "success");
+    });
 }
+
 
 function showPopup(msg, success = true) {
   const pop = document.getElementById("popup");
@@ -604,6 +663,14 @@ function showPopup(msg, success = true) {
   pop.style.color = success ? "green" : "red";
   pop.style.display = "block";
   setTimeout(() => pop.style.display = "none", 4000);
+}
+
+function toggleBrokerFields() {
+  const broker = document.getElementById("brokerSelect").value;
+  document.getElementById("alpacaKey").style.display = broker === "alpaca" ? "block" : "none";
+  document.getElementById("alpacaSecret").style.display = broker === "alpaca" ? "block" : "none";
+  document.getElementById("angelClientId").style.display = broker === "angelone" ? "block" : "none";
+  document.getElementById("angelPassword").style.display = broker === "angelone" ? "block" : "none";
 }
 
 function addToWatchlist() {
