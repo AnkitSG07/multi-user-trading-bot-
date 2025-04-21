@@ -1,30 +1,31 @@
 import os
-import pyotp
 from smartapi import SmartConnect
+import pyotp
 
-# Load credentials from environment
-API_KEY = os.getenv("ANGEL_API_KEY")
-CLIENT_ID = os.getenv("ANGEL_CLIENT_ID")
-PASSWORD = os.getenv("ANGEL_PASSWORD")
-TOTP_SECRET = os.getenv("ANGEL_TOTP_SECRET")
+# Load credentials from environment variables
+ANGEL_API_KEY = os.getenv("ANGEL_API_KEY")
+ANGEL_CLIENT_ID = os.getenv("ANGEL_CLIENT_ID")
+ANGEL_PASSWORD = os.getenv("ANGEL_PASSWORD")
+ANGEL_TOTP_SECRET = os.getenv("ANGEL_TOTP_SECRET")
 
-# Generate TOTP using pyotp
-totp = pyotp.TOTP(TOTP_SECRET).now()
+# Generate TOTP
+totp = pyotp.TOTP(ANGEL_TOTP_SECRET).now()
 
-# Create a SmartConnect object
-smart_api = SmartConnect(api_key=API_KEY)
+# Initialize SmartAPI client
+smart_api = SmartConnect(api_key=ANGEL_API_KEY)
 
 try:
-    # Generate session (login)
-    data = smart_api.generateSession(client_id=CLIENT_ID, password=PASSWORD, totp=totp)
-    refresh_token = data['data']['refreshToken']
-    access_token = data['data']['accessToken']
-    print("✅ Login successful")
-    print("Access Token:", access_token)
-    print("Refresh Token:", refresh_token)
+    # Attempt login
+    data = smart_api.generateSession(ANGEL_CLIENT_ID, ANGEL_PASSWORD, totp)
+    authToken = data["data"]["jwtToken"]
+    refreshToken = data["data"]["refreshToken"]
+    feedToken = smart_api.getfeedToken()
 
-    # Set access token for future requests
-    smart_api.setAccessToken(access_token)
+    print("✅ Login successful!")
+    print("Auth Token:", authToken)
+    print("Feed Token:", feedToken)
+
+    # You can return these tokens from a function if needed
 
 except Exception as e:
     print("❌ Login failed:", e)
