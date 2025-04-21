@@ -1,0 +1,101 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live Logs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #0d0d0d;
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+      margin: 0;
+      padding: 2rem;
+    }
+    .stats {
+      display: flex;
+      gap: 2rem;
+      justify-content: space-around;
+      background: #1a1a1d;
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+    }
+    .logs {
+      background: #1a1a1d;
+      padding: 1rem;
+      border-radius: 12px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .log-item {
+      border-bottom: 1px solid #333;
+      padding: 0.5rem 0;
+    }
+    .log-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="stats" id="liveStats">
+    <div>💰 Cash: $0</div>
+    <div>📈 Market: $0</div>
+    <div>💵 Equity: $0</div>
+    <div>📊 P&L: $0</div>
+  </div>
+
+  <div class="logs" id="logContainer">
+    Loading logs...
+  </div>
+
+  <script>
+    const user = localStorage.getItem("user_id") || "demo";
+
+    function fetchStats() {
+      fetch(`/portfolio/${user}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            document.getElementById("liveStats").innerHTML = `
+              <div>💰 Cash: $${data.cash}</div>
+              <div>📈 Market: $${data.market_value}</div>
+              <div>💵 Equity: $${data.equity}</div>
+              <div>📊 P&L: $${data.pnl}</div>
+            `;
+          }
+        });
+    }
+
+    function fetchLogs() {
+      fetch(`/logs/${user}`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("logContainer");
+          if (!data.length) {
+            container.innerHTML = "<em>No logs yet.</em>";
+            return;
+          }
+          container.innerHTML = data.reverse().map(log => `
+            <div class="log-item">
+              <strong>${log.timestamp}</strong><br/>
+              ${log.action} ${log.symbol} (${log.quantity}) - ${log.status} ${log.price ? " @ $" + log.price : ""}
+              ${log.error ? "<br/><span style='color:#ff4d4d'>Error: " + log.error + "</span>" : ""}
+            </div>
+          `).join("");
+        });
+    }
+
+    setInterval(() => {
+      fetchStats();
+      fetchLogs();
+    }, 3000);
+
+    fetchStats();
+    fetchLogs();
+  </script>
+</body>
+</html>
