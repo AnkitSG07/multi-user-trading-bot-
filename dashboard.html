@@ -512,7 +512,7 @@ function fetchLivePnL() {
 fetchLivePnL();
 
 function loadLogs() {
-  const user = localStorage.getItem("userid");
+  const user = localStorage.getItem("user_id");
   if (!user) return;
 
   fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
@@ -642,7 +642,7 @@ function autoTrade(symbol, action) {
 
 function connectBroker() {
   const broker = document.getElementById("brokerSelect").value;
-  const user = localStorage.getItem("userId");
+  const user = localStorage.getItem("user_Id");
   let payload = { user_id: user };
 
   if (broker === "alpaca") {
