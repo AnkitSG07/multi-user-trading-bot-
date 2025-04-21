@@ -758,10 +758,12 @@ function getAIRecommendation() {
   const recDiv = document.getElementById("ai-recommendation");
   recDiv.innerText = "🤖 Thinking...";
 
-  fetch("https://multi-user-trading-bot.onrender.com/recommend-ai", {
+  const user = localStorage.getItem("user_id"); // Make sure this is correctly set
+
+  fetch(`https://multi-user-trading-bot.onrender.com/recommend-ai?user_id=${user}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: user })
+    body: JSON.stringify({ prompt: "What should I do today?" }) // Or any custom prompt
   })
   .then(r => r.json())
   .then(data => {
