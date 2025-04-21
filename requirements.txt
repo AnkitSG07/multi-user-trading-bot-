@@ -6,4 +6,5 @@ requests
 alpaca-trade-api
 pycryptodome
 google-generativeai
-smartapi
+smartapi @ git+https://github.com/smartapi-samco/python-smartapi.git@main
+
