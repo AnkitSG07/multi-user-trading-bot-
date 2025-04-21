@@ -123,6 +123,26 @@ def get_logs(user_id):
     except:
         return jsonify([])
 
+@app.route("/connect-broker", methods=["POST"])
+def connect_broker():
+    data = request.json
+    broker = data.get("broker")
+
+    if broker == "alpaca":
+        api_key = data.get("apiKey")
+        # Save or authenticate Alpaca
+        return jsonify({"message": "✅ Alpaca connected."})
+    
+    elif broker == "angelone":
+        from angelone_autologin import login_to_angelone
+        try:
+            auth = login_to_angelone()
+            return jsonify({"message": "✅ Angel One connected.", "authToken": auth["authToken"]})
+        except Exception as e:
+            return jsonify({"message": "❌ Angel One login failed", "error": str(e)}), 500
+
+    return jsonify({"message": "❌ Unknown broker"}), 400
+
 
 @app.route("/recommend-ai", methods=["POST"])
 def recommend_ai():
