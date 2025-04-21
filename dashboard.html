@@ -733,7 +733,7 @@ function searchStock() {
     return;
   }
   result.innerHTML = '🔄 Searching...';
-  fetch(`https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${query}&apikey=demo`)
+  fetch(`https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${query}&apikey="732be95d470647be80419085887d2606"`)
     .then(r => r.json()).then(data => {
       if (data.bestMatches && data.bestMatches.length > 0) {
         const best = data.bestMatches[0];
