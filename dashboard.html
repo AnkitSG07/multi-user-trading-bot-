@@ -27,44 +27,6 @@
       color: var(--text);
       overflow-x: hidden;
     }
-    body {
-      padding-top: 120px; /* Offset for banner + header */
-    }
-    .market-banner-wrapper {
-      overflow: hidden;
-      background: #0f0f0f;
-      border-bottom: 1px solid #222;
-      position: fixed;
-      top: 0;
-      width: 100%;
-      z-index: 1100;
-    }
-    .market-banner {
-      width: 100%;
-      overflow: hidden;
-    }
-    .market-banner-track {
-      display: inline-block;
-      white-space: nowrap;
-      padding: 0.6rem 1rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      animation: scroll-left 60s linear infinite;
-    }
-    @keyframes scroll-left {
-      0% { transform: translateX(100%); }
-      100% { transform: translateX(-100%); }
-    }
-    .stock-item {
-      display: inline-block;
-      padding: 0 1rem;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    .up { color: #00ff99; }
-    .down { color: #ff4d4d; }
-    .neutral { color: var(--muted); }
-
     .navbar {
       display: flex;
       justify-content: space-between;
