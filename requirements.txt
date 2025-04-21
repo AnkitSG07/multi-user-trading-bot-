@@ -1,10 +1,10 @@
-Flask
+flask
 flask-cors
 cryptography
 pyotp
 requests
 twelve-data
 alpaca-trade-api
-gunicorn
 pycryptodome
-git+https://github.com/angel-one/py-smartapi@v1.0.2
+google-generativeai
+git+https://github.com/hanshulll/SmartAPI.git
