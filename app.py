@@ -127,7 +127,7 @@ def get_logs(userId):
 def connect_broker():
     data = request.json
     broker = data.get("broker")
-    userId = data.get("userId")
+    user_Id = data.get("userId")
 
     users = load_users()
     if userId not in users:
