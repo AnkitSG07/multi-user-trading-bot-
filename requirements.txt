@@ -6,6 +6,5 @@ requests==2.32.3
 pandas==2.2.2
 python-dotenv==1.0.1
 pycryptodome==3.19.0
-twelve-data==1.1.0
 alpaca-trade-api==3.0.1
 smartapi-python==1.0.0  # Official PyPI package from Angel One
