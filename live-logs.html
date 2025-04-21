@@ -57,67 +57,67 @@
     <div id="logs">Loading logs...</div>
   </div>
 
-  <script>
-    function loadLiveLogs() {
-      const user = localStorage.getItem("user_id");
-      if (!user) return;
+<script>
+function loadLogs() {
+  let user = localStorage.getItem("user_id");
 
-      fetch(`https://multi-user-trading-bot.onrender.com/live-logs/${user}`)
-        .then((r) => r.json())
-        .then((res) => {
-          const logs = res.logs || [];
-          const logsDiv = document.getElementById("logs");
-          if (!logsDiv) return;
-
-          if (logs.length === 0) {
-            logsDiv.innerHTML = "No trades yet.";
-            return;
-          }
-
-          logsDiv.innerHTML = logs.reverse().map((log) => `
-            <div class="log-entry">
-              <b>${log.action}</b> ${log.symbol} ×${log.quantity}
-              <span class="muted">at $${log.price || "?"}</span>
-              <span class="${log.status === "✅" ? 'green' : 'red'}">${log.status}</span>
-              <br/><span class="muted">${log.timestamp}</span>
-            </div>
-          `).join("");
-        })
-        .catch((err) => {
-          document.getElementById("logs").innerText = "❌ Error loading logs.";
-          console.error("Log error:", err);
-        });
+  if (!user) {
+    user = prompt("Enter your user ID to view logs:");
+    if (user) {
+      localStorage.setItem("user_id", user);
+    } else {
+      document.getElementById("logs").innerHTML = "❌ No user ID provided.";
+      return;
     }
+  }
 
-    function loadLivePnL() {
-      const user = localStorage.getItem("user_id");
-      if (!user) return;
-
-      fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.status === "success") {
-            document.getElementById("livePnL").innerHTML = `
-              💰 Cash: $${data.cash} | 📈 Equity: $${data.equity} | 📊 P&L: <span class="${data.pnl >= 0 ? 'green' : 'red'}">$${data.pnl}</span>
-            `;
-          } else {
-            document.getElementById("livePnL").innerText = "⚠️ Error loading PnL.";
-          }
-        })
-        .catch(() => {
-          document.getElementById("livePnL").innerText = "❌ Failed to fetch PnL.";
-        });
-    }
-
-    // Initial load + auto refresh every 5s
-    window.addEventListener("DOMContentLoaded", () => {
-      loadLiveLogs();
-      loadLivePnL();
-      setInterval(() => {
-        loadLiveLogs();
-        loadLivePnL();
-      }, 5000);
+  // 🪙 Load PnL
+  fetch(`https://multi-user-trading-bot.onrender.com/pnl/${user}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("cash").innerText = `$${data.cash}`;
+      document.getElementById("market").innerText = `$${data.market_value}`;
+      document.getElementById("equity").innerText = `$${data.equity}`;
+      document.getElementById("pnl").innerText = `$${data.pnl}`;
+    })
+    .catch(() => {
+      document.getElementById("cash").innerText = "⚠️ Error";
+      document.getElementById("market").innerText = "⚠️ Error";
+      document.getElementById("equity").innerText = "⚠️ Error";
+      document.getElementById("pnl").innerText = "⚠️ Error";
     });
-  </script>
+
+  // 📄 Load Logs
+  fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
+    .then((r) => r.json())
+    .then((logs) => {
+      const logsDiv = document.getElementById("logs");
+      if (!Array.isArray(logs) || logs.length === 0) {
+        logsDiv.innerHTML = "⚠️ No logs yet.";
+        return;
+      }
+
+      logsDiv.innerHTML = logs.reverse().map(log => `
+        <div>
+          <b>${log.action}</b> ${log.symbol} ×${log.quantity} 
+          <span style="color:gray;">at $${log.price || "?"}</span> 
+          <span style="color:${log.status === "✅" ? "#00ff99" : "#ff4d4d"}">${log.status}</span>
+          ${log.error ? `<div style="color:#ff4d4d;">Error: ${log.error}</div>` : ""}
+          <br/><small>${log.timestamp}</small>
+        </div><hr style="border: 0.5px solid #333;">
+      `).join("");
+    })
+    .catch(() => {
+      document.getElementById("logs").innerText = "❌ Error loading logs.";
+    });
+}
+
+// Run every 5s
+window.addEventListener("DOMContentLoaded", () => {
+  loadLogs();
+  setInterval(loadLogs, 5000);
+});
+</script>
+
 </body>
 </html>
