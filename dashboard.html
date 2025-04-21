@@ -270,6 +270,11 @@
         </div>
 
         <div class="card">
+          <h5>📘 Recent Trades</h5>
+          <div id="tradeLogs"><em>Loading logs...</em></div>
+        </div>
+
+        <div class="card">
           <h5>📊 Select Strategy</h5>
           <select id="strategy" onchange="updateStrategy()">
             <option value="balanced">Balanced</option>
@@ -504,6 +509,55 @@ function fetchLivePnL() {
 }
 
 fetchLivePnL();
+
+function loadLogs() {
+  const user = localStorage.getItem("user_id");
+  if (!user) return;
+
+  fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
+    .then((r) => r.json())
+    .then((logs) => {
+      const logsDiv = document.getElementById("logs");
+      if (!logsDiv) return;
+
+      if (logs.length === 0) {
+        logsDiv.innerHTML = "No trades yet.";
+        return;
+      }
+
+      logsDiv.innerHTML = logs
+        .reverse()
+        .map(
+          (log) => `
+          <div>
+            <b>${log.action}</b> ${log.symbol} ×${log.quantity} 
+            <span style="color:gray">at $${log.price || "?"}</span> 
+            <span style="color:${log.status === "✅" ? "#00ff99" : "#ff4d4d"}">
+              ${log.status}
+            </span>
+            <br/><small>${log.timestamp}</small>
+          </div><hr style="border:0.5px solid #333;">
+        `
+        )
+        .join("");
+
+      // Update last refreshed time
+      const updated = document.getElementById("logUpdated");
+      if (updated) {
+        updated.innerText = `Last updated: ${new Date().toLocaleTimeString()}`;
+      }
+    })
+    .catch((err) => {
+      console.error("Error loading logs:", err);
+    });
+}
+
+// Auto-refresh every 5 seconds
+window.addEventListener("DOMContentLoaded", () => {
+  loadLogs(); // Initial load
+  setInterval(loadLogs, 5000); // Auto refresh every 5s
+});
+
 
 function detectDarkMode() {
   const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
