@@ -1,125 +1,121 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Live Logs</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit&display=swap" rel="stylesheet">
+  <title>Live Trade Logs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
+      background-color: #0d0d0d;
+      color: #ffffff;
       font-family: 'Outfit', sans-serif;
-      background: #0e0e0e;
-      color: #fff;
-      margin: 2rem;
+      margin: 0;
+      padding: 2rem;
     }
-
-    .stats {
-      display: flex;
-      gap: 2rem;
-      margin-bottom: 2rem;
-      flex-wrap: wrap;
+    .container {
+      max-width: 800px;
+      margin: auto;
     }
-
-    .stat-box {
-      background: #1a1a1a;
-      padding: 1rem 2rem;
-      border-radius: 12px;
-      font-size: 1.2rem;
-      min-width: 200px;
+    h1 {
+      font-size: 2rem;
+      color: #00fff2;
+      text-align: center;
+      margin-bottom: 1rem;
     }
-
+    .live-pnl {
+      background: #1f1f1f;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-size: 1.1rem;
+    }
     #logs {
       background: #1a1a1a;
-      padding: 1rem 1.5rem;
-      border-radius: 12px;
+      padding: 1rem;
+      border-radius: 10px;
     }
-
     .log-entry {
       margin-bottom: 1rem;
-      line-height: 1.6;
+      border-bottom: 1px solid #333;
+      padding-bottom: 0.5rem;
     }
-
-    hr {
-      border: 0.5px solid #333;
+    .log-entry span {
+      font-size: 0.9rem;
     }
-
-    .timestamp {
-      color: #999;
-      font-size: 0.85rem;
-    }
+    .green { color: #00ff99; }
+    .red { color: #ff4d4d; }
+    .muted { color: #aaaaaa; }
   </style>
 </head>
 <body>
+  <div class="container">
+    <h1>📈 Live Trade Logs</h1>
+    <div class="live-pnl" id="livePnL">Loading live PnL...</div>
 
-  <h2>📊 Live Trading Logs</h2>
-
-  <div class="stats">
-    <div class="stat-box">💰 Cash: <span id="cash">$0</span></div>
-    <div class="stat-box">📈 Market: <span id="market">$0</span></div>
-    <div class="stat-box">🪙 Equity: <span id="equity">$0</span></div>
-    <div class="stat-box">📊 P&L: <span id="pnl">$0</span></div>
+    <div id="logs">Loading logs...</div>
   </div>
 
-  <div id="logs">Loading logs...</div>
-  <br>
-  <small id="logUpdated" style="color: #888;"></small>
-
   <script>
-    const user = localStorage.getItem("userid");
-    if (!user) window.location.href = "/login.html";
+    function loadLiveLogs() {
+      const user = localStorage.getItem("user_id");
+      if (!user) return;
 
-    function loadLogs() {
-      fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
-        .then(res => res.json())
-        .then(logs => {
+      fetch(`https://multi-user-trading-bot.onrender.com/live-logs/${user}`)
+        .then((r) => r.json())
+        .then((res) => {
+          const logs = res.logs || [];
           const logsDiv = document.getElementById("logs");
           if (!logsDiv) return;
 
-          if (!logs || logs.length === 0) {
+          if (logs.length === 0) {
             logsDiv.innerHTML = "No trades yet.";
             return;
           }
 
-          logsDiv.innerHTML = logs.reverse().map(log => `
+          logsDiv.innerHTML = logs.reverse().map((log) => `
             <div class="log-entry">
               <b>${log.action}</b> ${log.symbol} ×${log.quantity}
-              <span style="color:gray">at $${log.price || "?"}</span>
-              <span style="color:${log.status === "✅" ? "#00ff99" : "#ff4d4d"}">${log.status}</span>
-              <div class="timestamp">${log.timestamp}</div>
+              <span class="muted">at $${log.price || "?"}</span>
+              <span class="${log.status === "✅" ? 'green' : 'red'}">${log.status}</span>
+              <br/><span class="muted">${log.timestamp}</span>
             </div>
-            <hr>
           `).join("");
-
-          const updated = document.getElementById("logUpdated");
-          if (updated) {
-            updated.innerText = `Last updated: ${new Date().toLocaleTimeString()}`;
-          }
         })
-        .catch(err => {
+        .catch((err) => {
           document.getElementById("logs").innerText = "❌ Error loading logs.";
-          console.error(err);
+          console.error("Log error:", err);
         });
     }
 
-    function loadStats() {
+    function loadLivePnL() {
+      const user = localStorage.getItem("user_id");
+      if (!user) return;
+
       fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.status !== "success") return;
-          document.getElementById("cash").innerText = `$${data.cash}`;
-          document.getElementById("market").innerText = `$${data.market_value}`;
-          document.getElementById("equity").innerText = `$${data.equity}`;
-          document.getElementById("pnl").innerText = `$${data.pnl}`;
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.status === "success") {
+            document.getElementById("livePnL").innerHTML = `
+              💰 Cash: $${data.cash} | 📈 Equity: $${data.equity} | 📊 P&L: <span class="${data.pnl >= 0 ? 'green' : 'red'}">$${data.pnl}</span>
+            `;
+          } else {
+            document.getElementById("livePnL").innerText = "⚠️ Error loading PnL.";
+          }
         })
-        .catch(err => console.error("Stats error:", err));
+        .catch(() => {
+          document.getElementById("livePnL").innerText = "❌ Failed to fetch PnL.";
+        });
     }
 
+    // Initial load + auto refresh every 5s
     window.addEventListener("DOMContentLoaded", () => {
-      loadLogs();
-      loadStats();
+      loadLiveLogs();
+      loadLivePnL();
       setInterval(() => {
-        loadLogs();
-        loadStats();
+        loadLiveLogs();
+        loadLivePnL();
       }, 5000);
     });
   </script>
