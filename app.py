@@ -168,7 +168,6 @@ def connect_broker():
 
 @app.route("/recommend-ai", methods=["POST"])
 def recommend_ai():
-
     model = GenerativeModel("gemini-1.5-flash")
 
     user_id = request.args.get("user_id", "")
@@ -181,7 +180,7 @@ def recommend_ai():
 
     user = users[user_id]
     strategy = user.get("strategy", "balanced")
-    watchlist = ", ".join(user.get("watchlist", []))
+    watchlist = user.get("watchlist", []) or ["AAPL", "MSFT", "TSLA"]
 
     # Get portfolio info
     try:
@@ -197,6 +196,17 @@ def recommend_ai():
     except:
         cash = equity = market_value = pnl = "N/A"
 
+    # 🧠 Add live prices to prompt
+    price_lines = ""
+    for symbol in watchlist:
+        try:
+            r = requests.get(f"https://api.twelvedata.com/price?symbol={symbol}&apikey=732be95d470647be80419085887d2606")
+            price = r.json().get("price", "N/A")
+            price_lines += f"- {symbol}: ${price}\n"
+        except:
+            continue
+
+    # 🧠 AI Prompt context
     context = f"""
 You are a professional AI stock trading assistant.
 
@@ -208,7 +218,8 @@ Portfolio:
 - 💵 Total Equity: ${equity}
 - 📊 P&L: ${pnl}
 
-Watchlist: {watchlist}
+Watchlist with latest prices:
+{price_lines}
 
 ✅ Give direct BUY / SELL / HOLD suggestions only.
 ✅ Be brief, actionable, and avoid over-explaining.
@@ -220,6 +231,7 @@ Watchlist: {watchlist}
         return jsonify({"suggestion": response.text})
     except Exception as e:
         return jsonify({"suggestion": "❌ Gemini error: " + str(e)}), 500
+
 
 @app.route("/signup", methods=["POST"])
 def signup():
