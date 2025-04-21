@@ -5,6 +5,6 @@ flask-cors
 cryptography
 openai
 google.generativeai
-smartapi
+smartapi @ git+https://github.com/sharma-nakul63/smartapi-python.git
 pyotp
 pycryptodome
