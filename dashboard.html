@@ -26,6 +26,7 @@
       background: var(--bg);
       color: var(--text);
       overflow-x: hidden;
+      padding-top: 80px; /* ✅ This line fixes the content being overlapped */
     }
     .navbar {
       display: flex;
@@ -35,7 +36,7 @@
       background: var(--card);
       border-bottom: 1px solid #333;
       position: fixed;
-      top: 48px;
+      top: 0px;
       width: 100%;
       z-index: 1099;
     }
