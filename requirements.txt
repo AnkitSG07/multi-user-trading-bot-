@@ -1,9 +1,9 @@
 Flask
-alpaca-trade-api
-gunicorn
 flask-cors
 cryptography
-openai
-google.generativeai
-smartapi
 pyotp
+requests
+hashlib
+google-generativeai
+alpaca-trade-api
+smartapi
