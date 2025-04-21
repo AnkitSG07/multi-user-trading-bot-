@@ -46,73 +46,50 @@ def safe_bot(user_id):
     if user_id not in users:
         return jsonify({"status": "error", "message": "User not found"}), 404
 
-    broker = users[user_id].get("broker", "alpaca")
+    try:
+        api_key = fernet.decrypt(users[user_id]["api_key"].encode()).decode()
+        secret_key = fernet.decrypt(users[user_id]["secret_key"].encode()).decode()
+    except:
+        return jsonify({"status": "error", "message": "Decryption failed"}), 500
+
+    api = tradeapi.REST(api_key, secret_key, base_url="https://paper-api.alpaca.markets")
     strategy = users[user_id].get("strategy", "balanced")
     symbols = users[user_id].get("watchlist", []) or ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]
+
     TD_API_KEY = "732be95d470647be80419085887d2606"
     actions = []
 
-    try:
-        if broker == "alpaca":
-            api_key = fernet.decrypt(users[user_id]["api_key"].encode()).decode()
-            secret_key = fernet.decrypt(users[user_id]["secret_key"].encode()).decode()
-            api = tradeapi.REST(api_key, secret_key, base_url="https://paper-api.alpaca.markets")
+    for symbol in symbols:
+        try:
+            url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&outputsize=2&apikey={TD_API_KEY}"
+            res = requests.get(url).json()
+            if "values" not in res or len(res["values"]) < 2:
+                continue
 
-        elif broker == "angelone":
-            from angelone_autologin import place_order_angelone
-            # no need to fetch anything here; we’ll call place_order_angelone directly later
+            today = float(res["values"][0]["close"])
+            yesterday = float(res["values"][1]["close"])
+            change = round(((today - yesterday) / yesterday) * 100, 2)
 
-        else:
-            return jsonify({"status": "error", "message": "Unsupported broker"}), 400
+            # ✅ Safe Buy
+            if change < -2:
+                api.submit_order(symbol=symbol, qty=1, side="buy", type="market", time_in_force="gtc")
+                log_trade(user_id, {
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "symbol": symbol,
+                    "action": "Buy",
+                    "quantity": 1,
+                    "status": "✅",
+                    "price": today
+                })
+                actions.append(f"✅ Bought 1 {symbol} at ${today}")
 
-        for symbol in symbols:
-            try:
-                url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&outputsize=2&apikey={TD_API_KEY}"
-                res = requests.get(url).json()
-                if "values" not in res or len(res["values"]) < 2:
-                    continue
-
-                today = float(res["values"][0]["close"])
-                yesterday = float(res["values"][1]["close"])
-                change = round(((today - yesterday) / yesterday) * 100, 2)
-
-                # ✅ Safe Buy
-                if change < -2:
-                    if broker == "alpaca":
-                        api.submit_order(symbol=symbol, qty=1, side="buy", type="market", time_in_force="gtc")
-                    else:
-                        place_order_angelone(symbol, "buy", 1)
-
-                    log_trade(user_id, {
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "symbol": symbol,
-                        "action": "Buy",
-                        "quantity": 1,
-                        "status": "✅",
-                        "price": today
-                    })
-                    actions.append(f"✅ Bought 1 {symbol} at ${today}")
-
-                # ✅ Safe Sell
-                elif change > 2:
-                    can_sell = True
-
-                    if broker == "alpaca":
-                        try:
-                            position = api.get_position(symbol)
-                            qty = int(float(position.qty_available))
-                            if qty <= 0:
-                                can_sell = False
-                        except:
-                            can_sell = False
-
-                    # You can enhance Angel One check logic too if needed
-                    if can_sell:
-                        if broker == "alpaca":
-                            api.submit_order(symbol=symbol, qty=1, side="sell", type="market", time_in_force="gtc")
-                        else:
-                            place_order_angelone(symbol, "sell", 1)
-
+            # ✅ Safe Sell
+            elif change > 2:
+                try:
+                    position = api.get_position(symbol)
+                    qty = int(float(position.qty_available))
+                    if qty > 0:
+                        api.submit_order(symbol=symbol, qty=1, side="sell", type="market", time_in_force="gtc")
                         log_trade(user_id, {
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             "symbol": symbol,
@@ -122,15 +99,13 @@ def safe_bot(user_id):
                             "price": today
                         })
                         actions.append(f"✅ Sold 1 {symbol} at ${today}")
+                except:
+                    pass  # No position to sell
 
-            except Exception as e:
-                actions.append(f"❌ {symbol}: {str(e)}")
+        except Exception as e:
+            actions.append(f"❌ {symbol}: {str(e)}")
 
-        return jsonify({"status": "done", "actions": actions})
-
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-   
+    return jsonify({"status": "done", "actions": actions})
 
 
 @app.route("/")
@@ -331,53 +306,40 @@ def webhook(user_id):
     if not symbol or not action:
         return jsonify({"status": "error", "message": "Missing data"}), 400
 
-    broker = user.get("broker", "alpaca")
-
     try:
-        price = 0.0
-        if broker == "alpaca":
-            api_key = fernet.decrypt(user["api_key"].encode()).decode()
-            secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
+        api_key = fernet.decrypt(user["api_key"].encode()).decode()
+        secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
 
-            api = tradeapi.REST(
-                key_id=api_key,
-                secret_key=secret_key,
-                base_url="https://paper-api.alpaca.markets"
-            )
+        api = tradeapi.REST(
+            key_id=api_key,
+            secret_key=secret_key,
+            base_url="https://paper-api.alpaca.markets"
+        )
 
-            # ✅ Check for holdings before selling
-            held_qty = 0
-            if action.lower() == "sell":
-                try:
-                    positions = api.list_positions()
-                    position = next((p for p in positions if p.symbol == symbol), None)
-                    if position:
-                        held_qty = int(float(position.qty_available))
-                except:
-                    held_qty = 0
+        # 🔁 New fallback logic to get position
+        held_qty = 0
+        if action.lower() == "sell":
+            try:
+                positions = api.list_positions()
+                position = next((p for p in positions if p.symbol == symbol), None)
+                if position:
+                    held_qty = int(float(position.qty_available))
+            except Exception as e:
+                error_message = f"Failed to fetch position: {str(e)}"
+                return jsonify({"status": "error", "message": error_message}), 500
 
-                if held_qty < quantity:
-                    return jsonify({"status": "error", "message": f"Not enough quantity to sell: You have {held_qty}"}), 400
+            if held_qty < quantity:
+                return jsonify({"status": "error", "message": f"Not enough quantity to sell: You have {held_qty}"}), 400
 
-            order = api.submit_order(
-                symbol=symbol,
-                qty=quantity,
-                side=action.lower(),
-                type="market",
-                time_in_force="gtc"
-            )
+        order = api.submit_order(
+            symbol=symbol,
+            qty=quantity,
+            side=action.lower(),
+            type="market",
+            time_in_force="gtc"
+        )
 
-            price = float(order.filled_avg_price) if order.filled_avg_price else 0.0
-
-        elif broker == "angelone":
-            from angelone_autologin import place_order_angelone
-            result = place_order_angelone(symbol, action, quantity)
-            price = result.get("price", 0.0)
-
-        else:
-            return jsonify({"status": "error", "message": "❌ Unsupported broker."}), 400
-
-        # ✅ Log trade
+        price = float(order.filled_avg_price) if order.filled_avg_price else 0.0
         log_trade(user_id, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
@@ -386,7 +348,7 @@ def webhook(user_id):
             "status": "✅",
             "price": price
         })
-        return jsonify({"status": "success", "message": f"✅ {action.title()} placed for {symbol}."})
+        return jsonify({"status": "success", "order_id": order.id}), 200
 
     except Exception as e:
         error_message = str(e)
@@ -399,6 +361,7 @@ def webhook(user_id):
             "error": error_message
         })
         return jsonify({"status": "error", "message": f"❌ {error_message}"}), 500
+
 
 @app.route("/portfolio/<user_id>", methods=["GET"])
 def get_portfolio(user_id):
