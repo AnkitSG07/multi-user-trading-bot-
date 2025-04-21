@@ -53,7 +53,7 @@
   </div>
 
   <script>
-    const user = localStorage.getItem("user_id") || "demo";
+    const user = localStorage.getItem("userid") || "demo";
 
     function fetchStats() {
       fetch(`/portfolio/${user}`)
