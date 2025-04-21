@@ -754,31 +754,23 @@ if (heatmap) {
     heatmap.appendChild(day);
   }
 }
+
 function getAIRecommendation() {
   const recDiv = document.getElementById("ai-recommendation");
   recDiv.innerText = "🤖 Thinking...";
-
-  const user = localStorage.getItem("userId"); // Make sure this is correctly set
-
-  fetch(`https://multi-user-trading-bot.onrender.com/recommend-ai?user_id=${user}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: "What should I do today?" }) // Or any custom prompt
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.suggestion) {
-      recDiv.innerText = `🤖 ${data.suggestion}`;
-    } else {
-      recDiv.innerText = "⚠️ No recommendation received.";
-    }
-  })
-  .catch(err => {
-    recDiv.innerText = "❌ Error fetching AI recommendation.";
-    console.error("AI Error:", err);
-  });
+  setTimeout(() => {
+    const suggestions = [
+      "Buy TSLA – Momentum is high this week 🚀",
+      "Hold AAPL – Market is consolidating 📉",
+      "Sell NFLX – Downtrend after earnings ⚠️",
+      "Watch AMZN – Strong volume surge 💹",
+      "Re-enter INFY – Recovery likely 📈"
+    ];
+    const random = Math.floor(Math.random() * suggestions.length);
+    recDiv.innerText = suggestions[random];
+  }, 1200);
+  
 }
-
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('overlay');
