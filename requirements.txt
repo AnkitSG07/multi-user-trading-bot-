@@ -5,3 +5,6 @@ flask-cors
 cryptography
 openai
 google.generativeai
+os
+smartapi
+pyotp
