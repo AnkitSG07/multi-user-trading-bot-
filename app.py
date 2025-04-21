@@ -331,40 +331,53 @@ def webhook(user_id):
     if not symbol or not action:
         return jsonify({"status": "error", "message": "Missing data"}), 400
 
+    broker = user.get("broker", "alpaca")
+
     try:
-        api_key = fernet.decrypt(user["api_key"].encode()).decode()
-        secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
+        price = 0.0
+        if broker == "alpaca":
+            api_key = fernet.decrypt(user["api_key"].encode()).decode()
+            secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
 
-        api = tradeapi.REST(
-            key_id=api_key,
-            secret_key=secret_key,
-            base_url="https://paper-api.alpaca.markets"
-        )
+            api = tradeapi.REST(
+                key_id=api_key,
+                secret_key=secret_key,
+                base_url="https://paper-api.alpaca.markets"
+            )
 
-        # 🔁 New fallback logic to get position
-        held_qty = 0
-        if action.lower() == "sell":
-            try:
-                positions = api.list_positions()
-                position = next((p for p in positions if p.symbol == symbol), None)
-                if position:
-                    held_qty = int(float(position.qty_available))
-            except Exception as e:
-                error_message = f"Failed to fetch position: {str(e)}"
-                return jsonify({"status": "error", "message": error_message}), 500
+            # ✅ Check for holdings before selling
+            held_qty = 0
+            if action.lower() == "sell":
+                try:
+                    positions = api.list_positions()
+                    position = next((p for p in positions if p.symbol == symbol), None)
+                    if position:
+                        held_qty = int(float(position.qty_available))
+                except:
+                    held_qty = 0
 
-            if held_qty < quantity:
-                return jsonify({"status": "error", "message": f"Not enough quantity to sell: You have {held_qty}"}), 400
+                if held_qty < quantity:
+                    return jsonify({"status": "error", "message": f"Not enough quantity to sell: You have {held_qty}"}), 400
 
-        order = api.submit_order(
-            symbol=symbol,
-            qty=quantity,
-            side=action.lower(),
-            type="market",
-            time_in_force="gtc"
-        )
+            order = api.submit_order(
+                symbol=symbol,
+                qty=quantity,
+                side=action.lower(),
+                type="market",
+                time_in_force="gtc"
+            )
 
-        price = float(order.filled_avg_price) if order.filled_avg_price else 0.0
+            price = float(order.filled_avg_price) if order.filled_avg_price else 0.0
+
+        elif broker == "angelone":
+            from angelone_autologin import place_order_angelone
+            result = place_order_angelone(symbol, action, quantity)
+            price = result.get("price", 0.0)
+
+        else:
+            return jsonify({"status": "error", "message": "❌ Unsupported broker."}), 400
+
+        # ✅ Log trade
         log_trade(user_id, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
@@ -373,7 +386,7 @@ def webhook(user_id):
             "status": "✅",
             "price": price
         })
-        return jsonify({"status": "success", "order_id": order.id}), 200
+        return jsonify({"status": "success", "message": f"✅ {action.title()} placed for {symbol}."})
 
     except Exception as e:
         error_message = str(e)
