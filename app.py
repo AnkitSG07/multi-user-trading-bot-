@@ -46,50 +46,73 @@ def safe_bot(user_id):
     if user_id not in users:
         return jsonify({"status": "error", "message": "User not found"}), 404
 
-    try:
-        api_key = fernet.decrypt(users[user_id]["api_key"].encode()).decode()
-        secret_key = fernet.decrypt(users[user_id]["secret_key"].encode()).decode()
-    except:
-        return jsonify({"status": "error", "message": "Decryption failed"}), 500
-
-    api = tradeapi.REST(api_key, secret_key, base_url="https://paper-api.alpaca.markets")
+    broker = users[user_id].get("broker", "alpaca")
     strategy = users[user_id].get("strategy", "balanced")
     symbols = users[user_id].get("watchlist", []) or ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]
-
     TD_API_KEY = "732be95d470647be80419085887d2606"
     actions = []
 
-    for symbol in symbols:
-        try:
-            url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&outputsize=2&apikey={TD_API_KEY}"
-            res = requests.get(url).json()
-            if "values" not in res or len(res["values"]) < 2:
-                continue
+    try:
+        if broker == "alpaca":
+            api_key = fernet.decrypt(users[user_id]["api_key"].encode()).decode()
+            secret_key = fernet.decrypt(users[user_id]["secret_key"].encode()).decode()
+            api = tradeapi.REST(api_key, secret_key, base_url="https://paper-api.alpaca.markets")
 
-            today = float(res["values"][0]["close"])
-            yesterday = float(res["values"][1]["close"])
-            change = round(((today - yesterday) / yesterday) * 100, 2)
+        elif broker == "angelone":
+            from angelone_autologin import place_order_angelone
+            # no need to fetch anything here; we’ll call place_order_angelone directly later
 
-            # ✅ Safe Buy
-            if change < -2:
-                api.submit_order(symbol=symbol, qty=1, side="buy", type="market", time_in_force="gtc")
-                log_trade(user_id, {
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "symbol": symbol,
-                    "action": "Buy",
-                    "quantity": 1,
-                    "status": "✅",
-                    "price": today
-                })
-                actions.append(f"✅ Bought 1 {symbol} at ${today}")
+        else:
+            return jsonify({"status": "error", "message": "Unsupported broker"}), 400
 
-            # ✅ Safe Sell
-            elif change > 2:
-                try:
-                    position = api.get_position(symbol)
-                    qty = int(float(position.qty_available))
-                    if qty > 0:
-                        api.submit_order(symbol=symbol, qty=1, side="sell", type="market", time_in_force="gtc")
+        for symbol in symbols:
+            try:
+                url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&outputsize=2&apikey={TD_API_KEY}"
+                res = requests.get(url).json()
+                if "values" not in res or len(res["values"]) < 2:
+                    continue
+
+                today = float(res["values"][0]["close"])
+                yesterday = float(res["values"][1]["close"])
+                change = round(((today - yesterday) / yesterday) * 100, 2)
+
+                # ✅ Safe Buy
+                if change < -2:
+                    if broker == "alpaca":
+                        api.submit_order(symbol=symbol, qty=1, side="buy", type="market", time_in_force="gtc")
+                    else:
+                        place_order_angelone(symbol, "buy", 1)
+
+                    log_trade(user_id, {
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "symbol": symbol,
+                        "action": "Buy",
+                        "quantity": 1,
+                        "status": "✅",
+                        "price": today
+                    })
+                    actions.append(f"✅ Bought 1 {symbol} at ${today}")
+
+                # ✅ Safe Sell
+                elif change > 2:
+                    can_sell = True
+
+                    if broker == "alpaca":
+                        try:
+                            position = api.get_position(symbol)
+                            qty = int(float(position.qty_available))
+                            if qty <= 0:
+                                can_sell = False
+                        except:
+                            can_sell = False
+
+                    # You can enhance Angel One check logic too if needed
+                    if can_sell:
+                        if broker == "alpaca":
+                            api.submit_order(symbol=symbol, qty=1, side="sell", type="market", time_in_force="gtc")
+                        else:
+                            place_order_angelone(symbol, "sell", 1)
+
                         log_trade(user_id, {
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             "symbol": symbol,
@@ -99,13 +122,15 @@ def safe_bot(user_id):
                             "price": today
                         })
                         actions.append(f"✅ Sold 1 {symbol} at ${today}")
-                except:
-                    pass  # No position to sell
 
-        except Exception as e:
-            actions.append(f"❌ {symbol}: {str(e)}")
+            except Exception as e:
+                actions.append(f"❌ {symbol}: {str(e)}")
 
-    return jsonify({"status": "done", "actions": actions})
+        return jsonify({"status": "done", "actions": actions})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+   
 
 
 @app.route("/")
@@ -127,21 +152,43 @@ def get_logs(user_id):
 def connect_broker():
     data = request.json
     broker = data.get("broker")
+    user_id = data.get("user_id")
+
+    users = load_users()
+    if user_id not in users:
+        return jsonify({"status": "error", "message": "User not found"}), 404
+
+    users[user_id]["broker"] = broker  # ✅ Save broker preference
 
     if broker == "alpaca":
         api_key = data.get("apiKey")
-        # Save or authenticate Alpaca
-        return jsonify({"message": "✅ Alpaca connected."})
-    
-    elif broker == "angelone":
-        from angelone_autologin import login_to_angelone
+        secret_key = data.get("secretKey")
+
+        if not api_key or not secret_key:
+            return jsonify({"message": "❌ Missing Alpaca keys"}), 400
+
         try:
+            enc_api_key = fernet.encrypt(api_key.encode()).decode()
+            enc_secret_key = fernet.encrypt(secret_key.encode()).decode()
+            users[user_id]["api_key"] = enc_api_key
+            users[user_id]["secret_key"] = enc_secret_key
+            save_users(users)
+            return jsonify({"message": "✅ Alpaca connected."})
+        except Exception as e:
+            return jsonify({"message": "❌ Encryption failed", "error": str(e)}), 500
+
+    elif broker == "angelone":
+        try:
+            from angelone_autologin import login_to_angelone
             auth = login_to_angelone()
-            return jsonify({"message": "✅ Angel One connected.", "authToken": auth["authToken"]})
+            users[user_id]["auth_token"] = auth["authToken"]
+            save_users(users)
+            return jsonify({"message": "✅ Angel One connected."})
         except Exception as e:
             return jsonify({"message": "❌ Angel One login failed", "error": str(e)}), 500
 
     return jsonify({"message": "❌ Unknown broker"}), 400
+
 
 
 @app.route("/recommend-ai", methods=["POST"])
