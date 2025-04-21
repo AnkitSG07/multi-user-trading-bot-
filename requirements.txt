@@ -3,7 +3,6 @@ flask-cors
 cryptography
 pyotp
 requests
-twelve-data
 alpaca-trade-api
 pycryptodome
 google-generativeai
