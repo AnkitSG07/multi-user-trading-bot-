@@ -26,9 +26,9 @@ def save_users(users):
     with open("users.json", "w") as f:
         json.dump(users, f, indent=2)
 
-def log_trade(user_id, log_data):
+def log_trade(userId, log_data):
     os.makedirs("logs", exist_ok=True)
-    log_file = f"logs/{user_id}.json"
+    log_file = f"logs/{userId}.json"
     logs = []
     if os.path.exists(log_file):
         with open(log_file, "r") as f:
@@ -40,21 +40,21 @@ def log_trade(user_id, log_data):
     with open(log_file, "w") as f:
         json.dump(logs, f, indent=2)
 
-@app.route("/safe-bot/<user_id>", methods=["POST"])
-def safe_bot(user_id):
+@app.route("/safe-bot/<userId>", methods=["POST"])
+def safe_bot(userId):
     users = load_users()
-    if user_id not in users:
+    if userId not in users:
         return jsonify({"status": "error", "message": "User not found"}), 404
 
     try:
-        api_key = fernet.decrypt(users[user_id]["api_key"].encode()).decode()
-        secret_key = fernet.decrypt(users[user_id]["secret_key"].encode()).decode()
+        api_key = fernet.decrypt(users[userId]["api_key"].encode()).decode()
+        secret_key = fernet.decrypt(users[userId]["secret_key"].encode()).decode()
     except:
         return jsonify({"status": "error", "message": "Decryption failed"}), 500
 
     api = tradeapi.REST(api_key, secret_key, base_url="https://paper-api.alpaca.markets")
-    strategy = users[user_id].get("strategy", "balanced")
-    symbols = users[user_id].get("watchlist", []) or ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]
+    strategy = users[userId].get("strategy", "balanced")
+    symbols = users[userId].get("watchlist", []) or ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]
 
     TD_API_KEY = "732be95d470647be80419085887d2606"
     actions = []
@@ -73,7 +73,7 @@ def safe_bot(user_id):
             # ✅ Safe Buy
             if change < -2:
                 api.submit_order(symbol=symbol, qty=1, side="buy", type="market", time_in_force="gtc")
-                log_trade(user_id, {
+                log_trade(userId, {
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "symbol": symbol,
                     "action": "Buy",
@@ -90,7 +90,7 @@ def safe_bot(user_id):
                     qty = int(float(position.qty_available))
                     if qty > 0:
                         api.submit_order(symbol=symbol, qty=1, side="sell", type="market", time_in_force="gtc")
-                        log_trade(user_id, {
+                        log_trade(userId, {
                             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             "symbol": symbol,
                             "action": "Sell",
@@ -112,9 +112,9 @@ def safe_bot(user_id):
 def home():
     return '<script>window.location.href="/login.html";</script>'
 
-@app.route("/logs/<user_id>", methods=["GET"])
-def get_logs(user_id):
-    log_file = f"logs/{user_id}.json"
+@app.route("/logs/<userId>", methods=["GET"])
+def get_logs(userId):
+    log_file = f"logs/{userId}.json"
     if not os.path.exists(log_file):
         return jsonify([])
     try:
@@ -127,13 +127,13 @@ def get_logs(user_id):
 def connect_broker():
     data = request.json
     broker = data.get("broker")
-    user_id = data.get("user_id")
+    userId = data.get("userId")
 
     users = load_users()
-    if user_id not in users:
+    if userId not in users:
         return jsonify({"status": "error", "message": "User not found"}), 404
 
-    users[user_id]["broker"] = broker  # ✅ Save broker preference
+    users[userId]["broker"] = broker  # ✅ Save broker preference
 
     if broker == "alpaca":
         api_key = data.get("apiKey")
@@ -145,8 +145,8 @@ def connect_broker():
         try:
             enc_api_key = fernet.encrypt(api_key.encode()).decode()
             enc_secret_key = fernet.encrypt(secret_key.encode()).decode()
-            users[user_id]["api_key"] = enc_api_key
-            users[user_id]["secret_key"] = enc_secret_key
+            users[userId]["api_key"] = enc_api_key
+            users[userId]["secret_key"] = enc_secret_key
             save_users(users)
             return jsonify({"message": "✅ Alpaca connected."})
         except Exception as e:
@@ -156,7 +156,7 @@ def connect_broker():
         try:
             from angelone_autologin import login_to_angelone
             auth = login_to_angelone()
-            users[user_id]["auth_token"] = auth["authToken"]
+            users[userId]["auth_token"] = auth["authToken"]
             save_users(users)
             return jsonify({"message": "✅ Angel One connected."})
         except Exception as e:
@@ -170,15 +170,15 @@ def connect_broker():
 def recommend_ai():
     model = GenerativeModel("gemini-1.5-flash")
 
-    user_id = request.args.get("user_id", "")
+    userId = request.args.get("userId", "")
     data = request.get_json()
     prompt = data.get("prompt", "")
 
     users = load_users()
-    if user_id not in users:
+    if userId not in users:
         return jsonify({"suggestion": "User not found."}), 404
 
-    user = users[user_id]
+    user = users[userId]
     strategy = user.get("strategy", "balanced")
     watchlist = user.get("watchlist", []) or ["AAPL", "MSFT", "TSLA"]
 
@@ -236,18 +236,18 @@ Watchlist with latest prices:
 @app.route("/signup", methods=["POST"])
 def signup():
     data = request.get_json()
-    user_id = data.get("user_id", "").strip()
+    userId = data.get("userId", "").strip()
     password = data.get("password", "").strip()
 
-    if not user_id or not password:
+    if not userId or not password:
         return jsonify({"status": "error", "message": "User ID and password are required"}), 400
 
     users = load_users()
-    if user_id in users:
+    if userId in users:
         return jsonify({"status": "error", "message": "User ID already exists"}), 409
 
     hashed_pw = hashlib.sha256(password.encode()).hexdigest()
-    users[user_id] = {
+    users[userId] = {
         "password": hashed_pw,
         "api_key": "",
         "secret_key": "",
@@ -260,18 +260,18 @@ def signup():
 @app.route("/login", methods=["POST"])
 def login_user():
     data = request.get_json()
-    user_id = data.get("user_id", "").strip()
+    userId = data.get("userId", "").strip()
     password = data.get("password", "").strip()
 
-    if not user_id or not password:
+    if not userId or not password:
         return jsonify({"status": "error", "message": "User ID and Password are required."}), 400
 
     users = load_users()
-    if user_id not in users:
+    if userId not in users:
         return jsonify({"status": "error", "message": "User not found."}), 404
 
     hashed_pw = hashlib.sha256(password.encode()).hexdigest()
-    if users[user_id].get("password") != hashed_pw:
+    if users[userId].get("password") != hashed_pw:
         return jsonify({"status": "error", "message": "Incorrect password."}), 401
 
     return jsonify({"status": "success", "message": "Login successful."}), 200
@@ -279,11 +279,11 @@ def login_user():
 @app.route("/connect-alpaca", methods=["POST"])
 def connect_alpaca():
     data = request.get_json()
-    user_id = data.get("user_id", "").strip()
+    userId = data.get("userId", "").strip()
     api_key = data.get("api_key", "").strip()
     secret_key = data.get("secret_key", "").strip()
 
-    if not user_id or not api_key or not secret_key:
+    if not userId or not api_key or not secret_key:
         return jsonify({"status": "error", "message": "Missing data"}), 400
 
     try:
@@ -294,22 +294,22 @@ def connect_alpaca():
         return jsonify({"status": "error", "message": "Encryption failed: " + str(e)}), 500
 
     users = load_users()
-    if user_id not in users:
+    if userId not in users:
         return jsonify({"status": "error", "message": "User not found"}), 404
 
-    users[user_id]["api_key"] = enc_api_key
-    users[user_id]["secret_key"] = enc_secret_key
+    users[userId]["api_key"] = enc_api_key
+    users[userId]["secret_key"] = enc_secret_key
     save_users(users)
 
     return jsonify({"status": "success", "message": "API keys saved securely"}), 200
 
-@app.route("/webhook/<user_id>", methods=["POST"])
-def webhook(user_id):
+@app.route("/webhook/<userId>", methods=["POST"])
+def webhook(userId):
     users = load_users()
-    if user_id not in users:
+    if userId not in users:
         return jsonify({"status": "error", "message": "Invalid user"}), 404
 
-    user = users[user_id]
+    user = users[userId]
     data = request.get_json()
     symbol = data.get("symbol")
     action = data.get("action")
@@ -352,7 +352,7 @@ def webhook(user_id):
         )
 
         price = float(order.filled_avg_price) if order.filled_avg_price else 0.0
-        log_trade(user_id, {
+        log_trade(userId, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
             "action": action.capitalize(),
@@ -364,7 +364,7 @@ def webhook(user_id):
 
     except Exception as e:
         error_message = str(e)
-        log_trade(user_id, {
+        log_trade(userId, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
             "action": action.capitalize(),
@@ -375,12 +375,12 @@ def webhook(user_id):
         return jsonify({"status": "error", "message": f"❌ {error_message}"}), 500
 
 
-@app.route("/portfolio/<user_id>", methods=["GET"])
-def get_portfolio(user_id):
+@app.route("/portfolio/<userId>", methods=["GET"])
+def get_portfolio(userId):
     users = load_users()
-    if user_id not in users:
+    if userId not in users:
         return jsonify({"status": "error", "message": "Invalid user"}), 404
-    user = users[user_id]
+    user = users[userId]
     try:
         api_key = fernet.decrypt(user["api_key"].encode()).decode()
         secret_key = fernet.decrypt(user["secret_key"].encode()).decode()
@@ -408,24 +408,24 @@ def get_portfolio(user_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route("/strategy/<user_id>", methods=["GET", "POST"])
-def strategy_handler(user_id):
+@app.route("/strategy/<userId>", methods=["GET", "POST"])
+def strategy_handler(userId):
     users = load_users()
-    if user_id not in users:
+    if userId not in users:
         return jsonify({"status": "error", "message": "Invalid user"}), 404
     if request.method == "GET":
-        return jsonify({"strategy": users[user_id].get("strategy", "balanced")})
+        return jsonify({"strategy": users[userId].get("strategy", "balanced")})
     data = request.get_json()
-    users[user_id]["strategy"] = data.get("strategy", "balanced")
+    users[userId]["strategy"] = data.get("strategy", "balanced")
     save_users(users)
     return jsonify({"status": "success", "message": "Strategy updated"})
 
-@app.route("/watchlist/<user_id>", methods=["GET", "POST"])
-def watchlist_handler(user_id):
+@app.route("/watchlist/<userId>", methods=["GET", "POST"])
+def watchlist_handler(userId):
     users = load_users()
-    if user_id not in users:
+    if userId not in users:
         return jsonify({"status": "error", "message": "Invalid user"}), 404
-    user = users[user_id]
+    user = users[userId]
     user.setdefault("watchlist", [])
     if request.method == "GET":
         return jsonify({"symbols": user["watchlist"]})
@@ -439,15 +439,15 @@ def watchlist_handler(user_id):
     save_users(users)
     return jsonify({"symbols": user["watchlist"]})
 
-@app.route("/suggested/<user_id>", methods=["GET"])
-def suggested_symbols(user_id):
+@app.route("/suggested/<userId>", methods=["GET"])
+def suggested_symbols(userId):
     users = load_users()
-    if user_id not in users:
+    if userId not in users:
         return jsonify({"status": "error", "message": "Invalid user"}), 404
 
     TD_API_KEY = "732be95d470647be80419085887d2606"
-    strategy = users[user_id].get("strategy", "balanced")
-    symbols = users[user_id].get("watchlist", []) or ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]
+    strategy = users[userId].get("strategy", "balanced")
+    symbols = users[userId].get("watchlist", []) or ["AAPL", "MSFT", "GOOG", "TSLA", "AMZN"]
 
     suggestions = []
     for symbol in symbols:
@@ -486,9 +486,9 @@ def suggested_symbols(user_id):
     top5 = sorted(suggestions, key=lambda x: abs(x["change_percent"]), reverse=True)[:5]
     return jsonify(top5), 200
 
-@app.route("/pnl/<user_id>", methods=["GET"])
-def get_pnl_chart(user_id):
-    log_file = f"logs/{user_id}.json"
+@app.route("/pnl/<userId>", methods=["GET"])
+def get_pnl_chart(userId):
+    log_file = f"logs/{userId}.json"
     if not os.path.exists(log_file):
         return jsonify({"labels": [], "data": []})
     try:
@@ -513,9 +513,9 @@ def get_pnl_chart(user_id):
     except Exception as e:
         return jsonify({"labels": [], "data": [], "error": str(e)})
 
-@app.route("/live-logs/<user_id>", methods=["GET"])
-def live_logs(user_id):
-    log_file = f"logs/{user_id}.json"
+@app.route("/live-logs/<userId>", methods=["GET"])
+def live_logs(userId):
+    log_file = f"logs/{userId}.json"
     if not os.path.exists(log_file):
         return jsonify({"logs": [], "message": "No logs found."})
 
