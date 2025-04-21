@@ -5,6 +5,5 @@ flask-cors
 cryptography
 openai
 google.generativeai
-smartapi==1.1.0
+smartapi
 pyotp
-pycryptodome
