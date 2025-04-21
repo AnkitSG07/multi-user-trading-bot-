@@ -1,31 +1,49 @@
 import os
-from smartapi import SmartConnect
 import pyotp
+from smartapi import SmartConnect
 
-# Load credentials from environment variables
-ANGEL_API_KEY = os.getenv("ANGEL_API_KEY")
-ANGEL_CLIENT_ID = os.getenv("ANGEL_CLIENT_ID")
-ANGEL_PASSWORD = os.getenv("ANGEL_PASSWORD")
-ANGEL_TOTP_SECRET = os.getenv("ANGEL_TOTP_SECRET")
+# Reusable login function
+def login_to_angelone():
+    client = SmartConnect(api_key=os.environ["ANGEL_API_KEY"])
+    totp = pyotp.TOTP(os.environ["ANGEL_TOTP_SECRET"]).now()
 
-# Generate TOTP
-totp = pyotp.TOTP(ANGEL_TOTP_SECRET).now()
+    try:
+        session = client.generateSession(
+            os.environ["ANGEL_CLIENT_ID"],
+            os.environ["ANGEL_PASSWORD"],
+            totp
+        )
+        client.set_session_token(session["data"]["jwtToken"])
+        return {
+            "client": client,
+            "authToken": session["data"]["jwtToken"],
+            "feedToken": client.getfeedToken()
+        }
+    except Exception as e:
+        raise Exception(f"Angel One login failed: {str(e)}")
 
-# Initialize SmartAPI client
-smart_api = SmartConnect(api_key=ANGEL_API_KEY)
+# Reusable order function
+def place_order_angelone(symbol, side, quantity):
+    login_data = login_to_angelone()
+    client = login_data["client"]
 
-try:
-    # Attempt login
-    data = smart_api.generateSession(ANGEL_CLIENT_ID, ANGEL_PASSWORD, totp)
-    authToken = data["data"]["jwtToken"]
-    refreshToken = data["data"]["refreshToken"]
-    feedToken = smart_api.getfeedToken()
+    # 📝 Replace this with actual token fetched from Angel One's instrument list
+    symboltoken = "3045"  # Dummy NSE symboltoken, update this dynamically later
 
-    print("✅ Login successful!")
-    print("Auth Token:", authToken)
-    print("Feed Token:", feedToken)
+    orderparams = {
+        "variety": "NORMAL",
+        "tradingsymbol": symbol,
+        "symboltoken": symboltoken,
+        "transactiontype": side.upper(),  # "BUY" or "SELL"
+        "exchange": "NSE",
+        "ordertype": "MARKET",
+        "producttype": "INTRADAY",
+        "duration": "DAY",
+        "quantity": quantity
+    }
 
-    # You can return these tokens from a function if needed
-
-except Exception as e:
-    print("❌ Login failed:", e)
+    try:
+        order_id = client.placeOrder(orderparams)
+        return order_id
+    except Exception as e:
+        raise Exception(f"Angel One order failed: {str(e)}")
