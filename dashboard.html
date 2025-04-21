@@ -361,7 +361,7 @@
 <script>
 let user = "";
 document.addEventListener("DOMContentLoaded", () => {
-  user = localStorage.getItem("userId");
+  user = localStorage.getItem("user_Id");
   if (!user) return location.href = "login.html";
   document.getElementById("greetingUser").innerText = user;
   loadUserData();
@@ -432,7 +432,7 @@ function toggleTheme() {
  function askBot() {
     const input = document.getElementById('chatInput').value.trim();
     const responseDiv = document.getElementById('chatResponse');
-    const user = localStorage.getItem("userId");
+    const user = localStorage.getItem("user_Id");
     if (!input || !user) return;
 
     const greetings = ["hi", "hello", "hey", "yo", "what's up"];
@@ -489,7 +489,7 @@ function toggleTheme() {
   }
 
 function fetchLivePnL() {
-  const user = localStorage.getItem("userId");
+  const user = localStorage.getItem("user_Id");
   fetch(`https://multi-user-trading-bot.onrender.com/portfolio/${user}`)
     .then(r => r.json())
     .then(data => {
@@ -512,7 +512,7 @@ function fetchLivePnL() {
 fetchLivePnL();
 
 function loadLogs() {
-  const user = localStorage.getItem("user_id");
+  const user = localStorage.getItem("userid");
   if (!user) return;
 
   fetch(`https://multi-user-trading-bot.onrender.com/logs/${user}`)
