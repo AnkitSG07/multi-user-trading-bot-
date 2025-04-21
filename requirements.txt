@@ -7,4 +7,4 @@ twelve-data
 alpaca-trade-api
 pycryptodome
 google-generativeai
-git+https://github.com/hanshulll/SmartAPI.git
+smartapi
