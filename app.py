@@ -513,6 +513,20 @@ def get_pnl_chart(user_id):
     except Exception as e:
         return jsonify({"labels": [], "data": [], "error": str(e)})
 
+@app.route("/live-logs/<user_id>", methods=["GET"])
+def live_logs(user_id):
+    log_file = f"logs/{user_id}.json"
+    if not os.path.exists(log_file):
+        return jsonify({"logs": [], "message": "No logs found."})
+
+    try:
+        with open(log_file, "r") as f:
+            logs = json.load(f)
+        return jsonify({"logs": logs})
+    except Exception as e:
+        return jsonify({"logs": [], "error": str(e)})
+
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
