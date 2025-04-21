@@ -758,7 +758,7 @@ function getAIRecommendation() {
   const recDiv = document.getElementById("ai-recommendation");
   recDiv.innerText = "🤖 Thinking...";
 
-  const user = localStorage.getItem("user_id"); // Make sure this is correctly set
+  const user = localStorage.getItem("userId"); // Make sure this is correctly set
 
   fetch(`https://multi-user-trading-bot.onrender.com/recommend-ai?user_id=${user}`, {
     method: "POST",
