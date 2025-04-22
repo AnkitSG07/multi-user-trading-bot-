@@ -59,7 +59,7 @@
   </header>
 
   <section>
-    <h2>🔗 Your Angel One Webhook URL</h2>
+    <h2 id="webhookTitle">🔗 Your Angel One Webhook URL</h2>
     <p style="word-break: break-all; font-weight: bold; color: #58a6ff;" id="webhookDisplay">Loading...</p>
     <button onclick="navigator.clipboard.writeText(document.getElementById('webhookDisplay').textContent)">📋 Copy</button>
   </section>
@@ -120,6 +120,7 @@
           document.getElementById("brokerDisplay").textContent = data.broker || "N/A";
           document.getElementById("strategyDisplay").textContent = data.strategy || "N/A";
           webhookDisplay.textContent = data.webhook_url || "Unavailable";
+          document.getElementById("webhookTitle").textContent = `🔗 Your ${data.broker?.toUpperCase()} Webhook URL`;
         });
 
       const initialSecret = document.getElementById("angelTOTP").value;
@@ -151,12 +152,13 @@
       .then(res => res.json())
       .then(data => {
         alert(data.message);
-        fetch("https://multi-user-trading-bot.onrender.com/connect-broker", {
+        return fetch("https://multi-user-trading-bot.onrender.com/connect-broker", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, broker: "angelone" })
         });
-      });
+      })
+      .then(() => location.reload());
     }
 
     function placeTrade() {
