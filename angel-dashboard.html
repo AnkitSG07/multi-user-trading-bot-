@@ -2,57 +2,123 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Angel One Dashboard - SmartBot</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Angel One Trading Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      margin: 0;
+      padding: 20px;
+    }
+    header {
+      background: linear-gradient(90deg, #1f6feb, #3fb950);
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0;
+    }
+    section {
+      background-color: #161b22;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    input, select, button {
+      padding: 10px;
+      margin-right: 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 16px;
+    }
+    button {
+      background-color: #238636;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2ea043;
+    }
+    #logs {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #30363d;
+      padding: 10px;
+      background-color: #0d1117;
+      border-radius: 6px;
+    }
+  </style>
 </head>
-<body class="dark-theme">
+<body>
   <header>
-    <h1>📊 Angel One - India Market Dashboard</h1>
-    <button onclick="logout()">Logout</button>
+    <h1>📈 Angel One - SmartBot India Dashboard</h1>
   </header>
 
-  <main>
-    <section>
-      <h2>Place Trade (Manual)</h2>
-      <input type="text" id="symbol" placeholder="RELIANCE">
-      <select id="action">
-        <option value="BUY">BUY</option>
-        <option value="SELL">SELL</option>
-      </select>
-      <input type="number" id="quantity" placeholder="Quantity">
-      <button onclick="placeTrade()">Place Order</button>
-    </section>
+  <section>
+    <h2>🔐 Connect Your Angel One Account</h2>
+    <input type="text" id="angelClientId" placeholder="Client ID">
+    <input type="password" id="angelPassword" placeholder="Password">
+    <input type="text" id="angelTOTP" placeholder="TOTP Secret">
+    <button onclick="connectAngelOne()">Connect</button>
+  </section>
 
-    <section>
-      <h2>Live Logs</h2>
-      <div id="logs"></div>
-    </section>
-  </main>
+  <section>
+    <h2>⚙️ Place Trade</h2>
+    <input type="text" id="symbol" placeholder="Symbol e.g. RELIANCE">
+    <select id="action">
+      <option value="BUY">BUY</option>
+      <option value="SELL">SELL</option>
+    </select>
+    <input type="number" id="quantity" placeholder="Quantity">
+    <button onclick="placeTrade()">Place Order</button>
+  </section>
+
+  <section>
+    <h2>📜 Trade Logs</h2>
+    <div id="logs"></div>
+  </section>
 
   <script>
-    function placeTrade() {
-      const symbol = document.getElementById('symbol').value;
-      const action = document.getElementById('action').value;
-      const quantity = document.getElementById('quantity').value;
+    function connectAngelOne() {
+      const userId = localStorage.getItem("userId") || prompt("Enter your User ID:");
+      localStorage.setItem("userId", userId);
 
-      fetch('/angel-trade', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          symbol,
-          action,
-          quantity
-        })
-      }).then(res => res.json()).then(data => {
-        const logDiv = document.getElementById('logs');
-        logDiv.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${data.status} - ${data.message || data.orderId}</p>`;
+      const clientId = document.getElementById("angelClientId").value;
+      const password = document.getElementById("angelPassword").value;
+      const totp = document.getElementById("angelTOTP").value;
+
+      fetch("/connect-angel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, clientId, password, totp })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
       });
     }
 
-    function logout() {
-      localStorage.clear();
-      window.location.href = "login.html";
+    function placeTrade() {
+      const userId = localStorage.getItem("userId");
+      const symbol = document.getElementById("symbol").value;
+      const action = document.getElementById("action").value;
+      const quantity = document.getElementById("quantity").value;
+
+      fetch("/angel-trade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, symbol, action, quantity })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const logDiv = document.getElementById("logs");
+        const msg = data.status === 'success' ? `✅ Order Placed: ${data.orderId}` : `❌ Error: ${data.message}`;
+        logDiv.innerHTML += `<p>${new Date().toLocaleTimeString()} - ${msg}</p>`;
+      });
     }
   </script>
 </body>
