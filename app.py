@@ -9,8 +9,7 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import google.generativeai as genai
 from google.generativeai import GenerativeModel
-from smartapi import SmartConnect
-
+from smartapi import SmartConnect  # Consistent import
 
 fernet = Fernet(os.environ["FERNET_KEY"])
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -142,7 +141,7 @@ def place_angel_trade():
         totp = os.getenv('ANGEL_TOTP')
 
         smartapi = SmartConnect(api_key)
-        session = smartApi.generateSession(clientId, password, totp)
+        session = smartapi.generateSession(clientId, password, totp)
 
         symbol_map = {"RELIANCE": "2885", "INFY": "1594"}  # Extend this
         token = symbol_map.get(symbol.upper())
@@ -161,7 +160,7 @@ def place_angel_trade():
             "quantity": quantity
         }
 
-        orderId = smartApi.placeOrder(orderparams)
+        orderId = smartapi.placeOrder(orderparams)
         return jsonify({"status": "success", "orderId": orderId})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
@@ -297,7 +296,7 @@ def connect_angel():
         return jsonify({"status": "error", "message": "User not found"}), 404
 
     try:
-        from smartapi import SmartConnect  # ✅ lowercase module
+        from smartapi import SmartConnect
         smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         session = smartApi.generateSession(clientId, password, totp)
 
@@ -467,9 +466,10 @@ def webhook_angelone(userId):
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
     try:
-        from SmartApi.smartConnect import SmartConnect
+        from smartapi import SmartConnect
         smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        smartApi.setAccessToken(user["angelone"]["auth_token"])
+        # TODO: Implement token refresh here.  This is CRUCIAL for long-term use.
+        smartApi.setAccessToken(user["angelone"]["auth_token"])  # This token will expire!
 
         symbol_map = {
             "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
@@ -519,17 +519,6 @@ def webhook_angelone(userId):
         })
         return jsonify({"status": "error", "message": f"❌ {str(e)}"}), 500
 
-    except Exception as e:
-        log_trade(userId, {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "symbol": symbol,
-            "action": action.upper(),
-            "quantity": quantity,
-            "broker": "angelone",
-            "status": "❌",
-            "error": str(e)
-        })
-        return jsonify({"status": "error", "message": f"❌ {str(e)}"}), 500
 
 
 @app.route("/portfolio/<userId>", methods=["GET"])
