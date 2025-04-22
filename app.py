@@ -9,7 +9,7 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import google.generativeai as genai
 from google.generativeai import GenerativeModel
-from smartapi.smartConnect import SmartConnect
+from smartapi import SmartConnect
 
 
 fernet = Fernet(os.environ["FERNET_KEY"])
@@ -133,7 +133,7 @@ def place_angel_trade():
     quantity = int(data['quantity'])
 
     try:
-        from SmartApi.smartConnect import SmartConnect
+        from smartapi import SmartConnect
         import os
 
         api_key = os.getenv('ANGEL_API_KEY')
@@ -141,7 +141,7 @@ def place_angel_trade():
         password = os.getenv('ANGEL_PASSWORD')
         totp = os.getenv('ANGEL_TOTP')
 
-        smartApi = SmartConnect(api_key)
+        smartapi = SmartConnect(api_key)
         session = smartApi.generateSession(clientId, password, totp)
 
         symbol_map = {"RELIANCE": "2885", "INFY": "1594"}  # Extend this
