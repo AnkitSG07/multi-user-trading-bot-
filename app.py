@@ -169,13 +169,14 @@ def place_angel_trade():
 def connect_broker():
     data = request.json
     broker = data.get("broker")
-    user_Id = data.get("userId")
+    userId = data.get("userId")
 
     users = load_users()
     if userId not in users:
         return jsonify({"status": "error", "message": "User not found"}), 404
 
-    users[userId]["broker"] = broker  # ✅ Save broker preference
+    # ✅ Set current broker
+    users[userId]["current_broker"] = broker
 
     if broker == "alpaca":
         api_key = data.get("apiKey")
@@ -187,8 +188,10 @@ def connect_broker():
         try:
             enc_api_key = fernet.encrypt(api_key.encode()).decode()
             enc_secret_key = fernet.encrypt(secret_key.encode()).decode()
-            users[userId]["api_key"] = enc_api_key
-            users[userId]["secret_key"] = enc_secret_key
+            users[userId]["alpaca"] = {
+                "api_key": enc_api_key,
+                "secret_key": enc_secret_key
+            }
             save_users(users)
             return jsonify({"message": "✅ Alpaca connected."})
         except Exception as e:
@@ -198,7 +201,9 @@ def connect_broker():
         try:
             from angelone_autologin import login_to_angelone
             auth = login_to_angelone()
-            users[userId]["auth_token"] = auth["authToken"]
+            users[userId]["angelone"] = {
+                "auth_token": auth["authToken"]
+            }
             save_users(users)
             return jsonify({"message": "✅ Angel One connected."})
         except Exception as e:
