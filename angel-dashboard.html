@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Angel One Trading Dashboard</title>
+  <title>SmartBot India Trading Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/jsotp@1.2.6/lib/jsotp.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsotp/lib/jsotp.min.js"></script>
   <style>
     body {
       font-family: 'Outfit', sans-serif;
@@ -56,8 +56,15 @@
 </head>
 <body>
   <header>
-    <h1>📈 Angel One - SmartBot India Dashboard</h1>
+    <h1>📈 SmartBot India Trading Dashboard</h1>
   </header>
+
+  <section>
+    <h2>🔗 Your Angel One Webhook URL</h2>
+    <p style="word-break: break-all; font-weight: bold; color: #58a6ff;" id="webhookDisplay">Loading...</p>
+  </section>
+
+  
 
   <section>
     <h2>🔐 Connect Your Angel One Account</h2>
@@ -85,6 +92,21 @@
   </section>
 
   <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const userId = localStorage.getItem("userId") || prompt("Enter your User ID:");
+      localStorage.setItem("userId", userId);
+      const webhookDisplay = document.getElementById("webhookDisplay");
+      if (webhookDisplay) {
+        webhookDisplay.textContent = window.location.origin + "/webhook-angelone/" + userId;
+      }
+    });
+,
+        body: JSON.stringify({ userId, broker })
+      })
+      .then(res => res.json())
+      .then(data => alert(data.message));
+    }
+
     function connectAngelOne() {
       const userId = localStorage.getItem("userId") || prompt("Enter your User ID:");
       localStorage.setItem("userId", userId);
@@ -109,6 +131,11 @@
       .then(res => res.json())
       .then(data => {
         alert(data.message);
+        fetch("/connect-broker", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, broker: "angelone" })
+        });
       });
     }
 
@@ -118,15 +145,15 @@
       const action = document.getElementById("action").value;
       const quantity = document.getElementById("quantity").value;
 
-      fetch("/angel-trade", {
+      fetch("/webhook-angelone/" + userId, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, symbol, action, quantity })
+        body: JSON.stringify({ symbol, action, quantity })
       })
       .then(res => res.json())
       .then(data => {
         const logDiv = document.getElementById("logs");
-        const msg = data.status === 'success' ? `✅ Order Placed: ${data.orderId}` : `❌ Error: ${data.message}`;
+        const msg = data.status === 'success' ? `✅ Order Placed (${data.broker}): ${data.orderId}` : `❌ Error: ${data.message}`;
         logDiv.innerHTML += `<p>${new Date().toLocaleTimeString()} - ${msg}</p>`;
       });
     }
