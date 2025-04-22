@@ -8,4 +8,4 @@ google.generativeai
 pyotp
 pycryptodome
 logzero
-git+https://github.com/angel-one/smartapi-python.git
+git+https://github.com/angel-one/SmartAPI.git#egg=SmartApi
