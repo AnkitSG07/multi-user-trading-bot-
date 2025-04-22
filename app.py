@@ -9,7 +9,7 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import google.generativeai as genai
 from google.generativeai import GenerativeModel
-from smartapi.smartConnect import SmartConnect
+from smartapi import SmartConnect
 
 
 fernet = Fernet(os.environ["FERNET_KEY"])
@@ -297,15 +297,11 @@ def connect_angel():
         return jsonify({"status": "error", "message": "User not found"}), 404
 
     try:
-        from SmartApi.smartConnect import SmartConnect  # ✅ Use this case-sensitive import
-        smart_api = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))  # ✅ ANGEL_API_KEY should be in your env vars
-        session = smart_api.generateSession(clientId, password, totp)
+        from smartapi import SmartConnect  # ✅ lowercase module
+        smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
+        session = smartApi.generateSession(clientId, password, totp)
 
-        auth_token = session["data"]["jwtToken"]
-        users[userId]["angelone"] = {
-            "clientId": clientId,
-            "auth_token": auth_token
-        }
+        users[userId]["auth_token"] = session["data"]["jwtToken"]
         users[userId]["broker"] = "angelone"
         save_users(users)
 
