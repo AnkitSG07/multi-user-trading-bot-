@@ -274,6 +274,31 @@ Watchlist with latest prices:
     except Exception as e:
         return jsonify({"suggestion": "❌ Gemini error: " + str(e)}), 500
 
+@app.route("/connect-angel", methods=["POST"])
+def connect_angel():
+    data = request.get_json()
+    userId = data.get("userId")
+    clientId = data.get("clientId")
+    password = data.get("password")
+    totp = data.get("totp")
+
+    if not all([userId, clientId, password, totp]):
+        return jsonify({"status": "error", "message": "Missing credentials"}), 400
+
+    users = load_users()
+    if userId not in users:
+        return jsonify({"status": "error", "message": "User not found"}), 404
+
+    try:
+        from smartapi import SmartConnect
+        smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
+        session = smartApi.generateSession(clientId, password, totp)
+        users[userId]["auth_token"] = session["data"]["jwtToken"]
+        save_users(users)
+        return jsonify({"status": "success", "message": "✅ Angel One connected successfully"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+
 
 @app.route("/signup", methods=["POST"])
 def signup():
