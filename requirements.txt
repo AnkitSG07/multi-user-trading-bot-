@@ -7,5 +7,5 @@ openai
 google.generativeai
 pyotp
 pycryptodome
+logzero
 smartapi-python @ git+https://github.com/angel-one/smartapi-python.git
-
