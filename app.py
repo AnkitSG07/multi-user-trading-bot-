@@ -9,7 +9,6 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import google.generativeai as genai
 from google.generativeai import GenerativeModel
-import smartapi
 from smartapi.smartConnect import SmartConnect
 
 
