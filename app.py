@@ -662,6 +662,23 @@ def live_logs(userId):
     except Exception as e:
         return jsonify({"logs": [], "error": str(e)})
 
+@app.route("/user-info/<userId>", methods=["GET"])
+def user_info(userId):
+    users = load_users()
+    if userId not in users:
+        return jsonify({"status": "error", "message": "User not found"}), 404
+
+    broker = users[userId].get("broker", "angelone")
+    strategy = users[userId].get("strategy", "balanced")
+
+    render_base = "https://multi-user-trading-bot.onrender.com"
+    webhook_url = f"{render_base}/webhook-angelone/{userId}" if broker == "angelone" else f"{render_base}/webhook/{userId}"
+
+    return jsonify({
+        "broker": broker,
+        "strategy": strategy,
+        "webhook_url": webhook_url
+    })
 
 
 if __name__ == "__main__":
