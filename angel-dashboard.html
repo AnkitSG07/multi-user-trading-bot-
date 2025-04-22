@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartBot India Trading Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/jsotp/lib/jsotp.min.js"></script>
+  
   <style>
     body {
       font-family: 'Outfit', sans-serif;
@@ -100,7 +100,6 @@
         webhookDisplay.textContent = window.location.origin + "/webhook-angelone/" + userId;
       }
     });
-,
         body: JSON.stringify({ userId, broker })
       })
       .then(res => res.json())
@@ -115,8 +114,16 @@
       const password = document.getElementById("angelPassword").value;
       const totpSecret = document.getElementById("angelTOTP").value;
 
-      const totp = new jsOTP.totp();
-      const generatedOTP = totp.getOtp(totpSecret);
+      function generateOTP(secret) {
+        const epoch = Math.floor(Date.now() / 1000);
+        const time = Math.floor(epoch / 30);
+        const key = CryptoJS.enc.Base32.parse(secret);
+        const hmac = CryptoJS.HmacSHA1(CryptoJS.enc.Hex.parse(('000000000000000' + time.toString(16)).slice(-16)), key);
+        const offset = parseInt(hmac.toString().substr(-1), 16);
+        const otp = (parseInt(hmac.toString().substr(offset * 2, 8), 16) & 0x7fffffff) + '';
+        return otp.slice(-6);
+      }
+      const generatedOTP = generateOTP(totpSecret);
 
       fetch("/connect-angel", {
         method: "POST",
@@ -161,11 +168,11 @@
     setInterval(() => {
       const totpSecret = document.getElementById("angelTOTP").value;
       if (totpSecret) {
-        const totp = new jsOTP.totp();
-        const otp = totp.getOtp(totpSecret);
+        const otp = generateOTP(totpSecret);
         document.getElementById("otpDisplay").innerText = otp;
       }
     }, 1000);
   </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </body>
 </html>
