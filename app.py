@@ -9,8 +9,8 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import google.generativeai as genai
 from google.generativeai import GenerativeModel
-import SmartApi
-from SmartApi.smartConnect import SmartConnect
+import smartapi
+from smartapi.smartConnect import SmartConnect
 
 
 fernet = Fernet(os.environ["FERNET_KEY"])
