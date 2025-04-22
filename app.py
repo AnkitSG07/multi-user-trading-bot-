@@ -134,7 +134,7 @@ def place_angel_trade():
     quantity = int(data['quantity'])
 
     try:
-        from smartapi import SmartConnect
+        from SmartApi.smartConnect import SmartConnect
         import os
 
         api_key = os.getenv('ANGEL_API_KEY')
