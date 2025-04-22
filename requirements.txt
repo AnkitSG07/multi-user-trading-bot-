@@ -7,4 +7,4 @@ openai
 google.generativeai
 pyotp
 pycryptodome
-git+https://github.com/angel-one/smartapi-python.git
+smartapi @ git+https://github.com/angel-one/smartapi-python.git
