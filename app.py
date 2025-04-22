@@ -294,6 +294,7 @@ def connect_angel():
         smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         session = smartApi.generateSession(clientId, password, totp)
         users[userId]["auth_token"] = session["data"]["jwtToken"]
+        users[userId]["broker"] = "angelone" 
         save_users(users)
         return jsonify({"status": "success", "message": "✅ Angel One connected successfully"})
     except Exception as e:
