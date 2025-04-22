@@ -112,22 +112,20 @@
       const userId = localStorage.getItem("userId") || prompt("Enter your User ID:");
       localStorage.setItem("userId", userId);
       document.getElementById("userIdDisplay").textContent = userId;
+
       const webhookDisplay = document.getElementById("webhookDisplay");
-      if (webhookDisplay) {
-        webhookDisplay.textContent = window.location.origin + "/webhook-angelone/" + userId;
-      }
-
-      const initialSecret = document.getElementById("angelTOTP").value;
-      if (initialSecret) {
-        document.getElementById("otpDisplay").innerText = generateOTP(initialSecret);
-      }
-
       fetch("/user-info/" + userId)
         .then(res => res.json())
         .then(data => {
           document.getElementById("brokerDisplay").textContent = data.broker || "N/A";
           document.getElementById("strategyDisplay").textContent = data.strategy || "N/A";
+          webhookDisplay.textContent = data.webhook_url || "Unavailable";
         });
+
+      const initialSecret = document.getElementById("angelTOTP").value;
+      if (initialSecret) {
+        document.getElementById("otpDisplay").innerText = generateOTP(initialSecret);
+      }
     });
 
     function connectAngelOne() {
