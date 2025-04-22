@@ -99,13 +99,18 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <script>
     function generateOTP(secret) {
-      const epoch = Math.floor(Date.now() / 1000);
-      const time = Math.floor(epoch / 30);
-      const key = CryptoJS.enc.Base32.parse(secret);
-      const hmac = CryptoJS.HmacSHA1(CryptoJS.enc.Hex.parse(('000000000000000' + time.toString(16)).slice(-16)), key);
-      const offset = parseInt(hmac.toString().substr(-1), 16);
-      const otp = (parseInt(hmac.toString().substr(offset * 2, 8), 16) & 0x7fffffff) + '';
-      return otp.slice(-6);
+      try {
+        const epoch = Math.floor(Date.now() / 1000);
+        const time = Math.floor(epoch / 30);
+        const key = CryptoJS.enc.Hex.parse(CryptoJS.SHA1(secret).toString());
+        const timeHex = ('000000000000000' + time.toString(16)).slice(-16);
+        const hmac = CryptoJS.HmacSHA1(CryptoJS.enc.Hex.parse(timeHex), key);
+        const offset = parseInt(hmac.toString().substr(-1), 16);
+        const otp = (parseInt(hmac.toString().substr(offset * 2, 8), 16) & 0x7fffffff) + '';
+        return otp.slice(-6);
+      } catch (e) {
+        return '000000';
+      }
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -119,9 +124,11 @@
         .then(data => {
           document.getElementById("brokerDisplay").textContent = data.broker || "N/A";
           document.getElementById("strategyDisplay").textContent = data.strategy || "N/A";
-          const finalURL = `https://multi-user-trading-bot.onrender.com/${data.broker === 'angelone' ? 'webhook-angelone' : 'webhook'}/${userId}`;
+
+          const broker = "angelone"; // Always override for this dashboard
+          const finalURL = `https://multi-user-trading-bot.onrender.com/webhook-${broker}/${userId}`;
           webhookDisplay.textContent = finalURL;
-          document.getElementById("webhookTitle").textContent = `🔗 Your ${data.broker?.toUpperCase()} Webhook URL`;
+          document.getElementById("webhookTitle").textContent = `🔗 Your ${broker.toUpperCase()} Webhook URL`;
         });
 
       const initialSecret = document.getElementById("angelTOTP").value;
