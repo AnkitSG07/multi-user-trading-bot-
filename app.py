@@ -123,6 +123,48 @@ def get_logs(userId):
     except:
         return jsonify([])
 
+@app.route('/angel-trade', methods=['POST'])
+def place_angel_trade():
+    data = request.json
+    symbol = data['symbol']
+    side = data['action'].upper()
+    quantity = int(data['quantity'])
+
+    try:
+        from smartapi import SmartConnect
+        import os
+
+        api_key = os.getenv('ANGEL_API_KEY')
+        clientId = os.getenv('ANGEL_CLIENT_ID')
+        password = os.getenv('ANGEL_PASSWORD')
+        totp = os.getenv('ANGEL_TOTP')
+
+        smartApi = SmartConnect(api_key)
+        session = smartApi.generateSession(clientId, password, totp)
+
+        symbol_map = {"RELIANCE": "2885", "INFY": "1594"}  # Extend this
+        token = symbol_map.get(symbol.upper())
+        if not token:
+            return jsonify({"status": "error", "message": "Symbol not found"}), 400
+
+        orderparams = {
+            "variety": "NORMAL",
+            "tradingsymbol": symbol.upper(),
+            "symboltoken": token,
+            "transactiontype": side,
+            "exchange": "NSE",
+            "ordertype": "MARKET",
+            "producttype": "INTRADAY",
+            "duration": "DAY",
+            "quantity": quantity
+        }
+
+        orderId = smartApi.placeOrder(orderparams)
+        return jsonify({"status": "success", "orderId": orderId})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+
+
 @app.route("/connect-broker", methods=["POST"])
 def connect_broker():
     data = request.json
