@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Angel One Trading Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jsotp@1.2.6/lib/jsotp.min.js"></script>
   <style>
     body {
       font-family: 'Outfit', sans-serif;
@@ -64,6 +65,7 @@
     <input type="password" id="angelPassword" placeholder="Password">
     <input type="text" id="angelTOTP" placeholder="TOTP Secret">
     <button onclick="connectAngelOne()">Connect</button>
+    <p>🔄 Current OTP: <span id="otpDisplay">---</span></p>
   </section>
 
   <section>
@@ -89,12 +91,20 @@
 
       const clientId = document.getElementById("angelClientId").value;
       const password = document.getElementById("angelPassword").value;
-      const totp = document.getElementById("angelTOTP").value;
+      const totpSecret = document.getElementById("angelTOTP").value;
+
+      const totp = new jsOTP.totp();
+      const generatedOTP = totp.getOtp(totpSecret);
 
       fetch("/connect-angel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, clientId, password, totp })
+        body: JSON.stringify({
+          userId,
+          clientId,
+          password,
+          totp: generatedOTP
+        })
       })
       .then(res => res.json())
       .then(data => {
@@ -120,6 +130,15 @@
         logDiv.innerHTML += `<p>${new Date().toLocaleTimeString()} - ${msg}</p>`;
       });
     }
+
+    setInterval(() => {
+      const totpSecret = document.getElementById("angelTOTP").value;
+      if (totpSecret) {
+        const totp = new jsOTP.totp();
+        const otp = totp.getOtp(totpSecret);
+        document.getElementById("otpDisplay").innerText = otp;
+      }
+    }, 1000);
   </script>
 </body>
 </html>
