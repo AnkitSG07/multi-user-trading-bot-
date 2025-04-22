@@ -114,7 +114,7 @@
       document.getElementById("userIdDisplay").textContent = userId;
 
       const webhookDisplay = document.getElementById("webhookDisplay");
-      fetch("/user-info/" + userId)
+      fetch("https://multi-user-trading-bot.onrender.com/user-info/" + userId)
         .then(res => res.json())
         .then(data => {
           document.getElementById("brokerDisplay").textContent = data.broker || "N/A";
@@ -138,7 +138,7 @@
 
       const generatedOTP = generateOTP(totpSecret);
 
-      fetch("/connect-angel", {
+      fetch("https://multi-user-trading-bot.onrender.com/connect-angel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -151,7 +151,7 @@
       .then(res => res.json())
       .then(data => {
         alert(data.message);
-        fetch("/connect-broker", {
+        fetch("https://multi-user-trading-bot.onrender.com/connect-broker", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, broker: "angelone" })
@@ -165,7 +165,7 @@
       const action = document.getElementById("action").value;
       const quantity = document.getElementById("quantity").value;
 
-      fetch("/webhook-angelone/" + userId, {
+      fetch("https://multi-user-trading-bot.onrender.com/webhook-angelone/" + userId, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol, action, quantity })
