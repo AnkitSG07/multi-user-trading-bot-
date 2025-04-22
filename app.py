@@ -9,7 +9,7 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import google.generativeai as genai
 from google.generativeai import GenerativeModel
-from smartapi import SmartConnect
+from SmartApi.smartConnect import SmartConnect
 
 
 fernet = Fernet(os.environ["FERNET_KEY"])
@@ -297,12 +297,18 @@ def connect_angel():
         return jsonify({"status": "error", "message": "User not found"}), 404
 
     try:
-        from smartapi import SmartConnect
-        smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        session = smartApi.generateSession(clientId, password, totp)
-        users[userId]["auth_token"] = session["data"]["jwtToken"]
-        users[userId]["broker"] = "angelone" 
+        from SmartApi.smartConnect import SmartConnect  # ✅ Use this case-sensitive import
+        smart_api = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))  # ✅ ANGEL_API_KEY should be in your env vars
+        session = smart_api.generateSession(clientId, password, totp)
+
+        auth_token = session["data"]["jwtToken"]
+        users[userId]["angelone"] = {
+            "clientId": clientId,
+            "auth_token": auth_token
+        }
+        users[userId]["broker"] = "angelone"
         save_users(users)
+
         return jsonify({"status": "success", "message": "✅ Angel One connected successfully"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
@@ -452,28 +458,27 @@ def webhook(userId):
 @app.route("/webhook-angelone/<userId>", methods=["POST"])
 def webhook_angelone(userId):
     users = load_users()
-    if userId not in users:
-        return jsonify({"status": "error", "message": "Invalid user"}), 404
+    if userId not in users or "angelone" not in users[userId]:
+        return jsonify({"status": "error", "message": "User or Angel One credentials not found"}), 404
 
     user = users[userId]
     data = request.get_json()
     symbol = data.get("symbol")
-    action = data.get("action")
+    action = data.get("action", "").upper()
     quantity = int(data.get("quantity", 1))
 
     if not symbol or not action:
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
     try:
-        from smartapi import SmartConnect
+        from SmartApi.smartConnect import SmartConnect
         smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        smartApi.setAccessToken(user["auth_token"])
+        smartApi.setAccessToken(user["angelone"]["auth_token"])
 
         symbol_map = {
             "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
             "SBIN": "3045", "ITC": "1660", "KOTAKBANK": "1922", "HINDUNILVR": "1394", "LT": "11483",
             "BHARTIARTL": "10604", "AXISBANK": "5900", "MARUTI": "509", "BAJFINANCE": "317", "ASIANPAINT": "604"
-            # You can extend this list further
         }
 
         token = symbol_map.get(symbol.upper())
@@ -484,7 +489,7 @@ def webhook_angelone(userId):
             "variety": "NORMAL",
             "tradingsymbol": symbol.upper(),
             "symboltoken": token,
-            "transactiontype": action.upper(),
+            "transactiontype": action,
             "exchange": "NSE",
             "ordertype": "MARKET",
             "producttype": "INTRADAY",
@@ -497,7 +502,7 @@ def webhook_angelone(userId):
         log_trade(userId, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
-            "action": action.upper(),
+            "action": action,
             "quantity": quantity,
             "broker": "angelone",
             "status": "✅",
@@ -505,6 +510,18 @@ def webhook_angelone(userId):
         })
 
         return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"}), 200
+
+    except Exception as e:
+        log_trade(userId, {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "symbol": symbol,
+            "action": action,
+            "quantity": quantity,
+            "broker": "angelone",
+            "status": "❌",
+            "error": str(e)
+        })
+        return jsonify({"status": "error", "message": f"❌ {str(e)}"}), 500
 
     except Exception as e:
         log_trade(userId, {
