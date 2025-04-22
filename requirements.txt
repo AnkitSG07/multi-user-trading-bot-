@@ -8,4 +8,4 @@ google.generativeai
 pyotp
 pycryptodome
 logzero
-smartapi-python
+smartapi-python==1.5.5
