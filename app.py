@@ -416,6 +416,75 @@ def webhook(userId):
         })
         return jsonify({"status": "error", "message": f"❌ {error_message}"}), 500
 
+@app.route("/webhook-angelone/<userId>", methods=["POST"])
+def webhook_angelone(userId):
+    users = load_users()
+    if userId not in users:
+        return jsonify({"status": "error", "message": "Invalid user"}), 404
+
+    user = users[userId]
+    data = request.get_json()
+    symbol = data.get("symbol")
+    action = data.get("action")
+    quantity = int(data.get("quantity", 1))
+
+    if not symbol or not action:
+        return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
+
+    try:
+        from smartapi import SmartConnect
+        smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
+        smartApi.setAccessToken(user["auth_token"])
+
+        symbol_map = {
+            "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
+            "SBIN": "3045", "ITC": "1660", "KOTAKBANK": "1922", "HINDUNILVR": "1394", "LT": "11483",
+            "BHARTIARTL": "10604", "AXISBANK": "5900", "MARUTI": "509", "BAJFINANCE": "317", "ASIANPAINT": "604"
+            # You can extend this list further
+        }
+
+        token = symbol_map.get(symbol.upper())
+        if not token:
+            return jsonify({"status": "error", "message": f"Symbol '{symbol}' not supported"}), 400
+
+        orderparams = {
+            "variety": "NORMAL",
+            "tradingsymbol": symbol.upper(),
+            "symboltoken": token,
+            "transactiontype": action.upper(),
+            "exchange": "NSE",
+            "ordertype": "MARKET",
+            "producttype": "INTRADAY",
+            "duration": "DAY",
+            "quantity": quantity
+        }
+
+        order_id = smartApi.placeOrder(orderparams)
+
+        log_trade(userId, {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "symbol": symbol,
+            "action": action.upper(),
+            "quantity": quantity,
+            "broker": "angelone",
+            "status": "✅",
+            "order_id": order_id
+        })
+
+        return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"}), 200
+
+    except Exception as e:
+        log_trade(userId, {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "symbol": symbol,
+            "action": action.upper(),
+            "quantity": quantity,
+            "broker": "angelone",
+            "status": "❌",
+            "error": str(e)
+        })
+        return jsonify({"status": "error", "message": f"❌ {str(e)}"}), 500
+
 
 @app.route("/portfolio/<userId>", methods=["GET"])
 def get_portfolio(userId):
