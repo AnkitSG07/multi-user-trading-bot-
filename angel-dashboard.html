@@ -119,7 +119,8 @@
         .then(data => {
           document.getElementById("brokerDisplay").textContent = data.broker || "N/A";
           document.getElementById("strategyDisplay").textContent = data.strategy || "N/A";
-          webhookDisplay.textContent = data.webhook_url || "Unavailable";
+          const finalURL = `https://multi-user-trading-bot.onrender.com/${data.broker === 'angelone' ? 'webhook-angelone' : 'webhook'}/${userId}`;
+          webhookDisplay.textContent = finalURL;
           document.getElementById("webhookTitle").textContent = `🔗 Your ${data.broker?.toUpperCase()} Webhook URL`;
         });
 
@@ -142,12 +143,7 @@
       fetch("https://multi-user-trading-bot.onrender.com/connect-angel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          clientId,
-          password,
-          totp: generatedOTP
-        })
+        body: JSON.stringify({ userId, clientId, password, totp: generatedOTP })
       })
       .then(res => res.json())
       .then(data => {
@@ -175,7 +171,9 @@
       .then(res => res.json())
       .then(data => {
         const logDiv = document.getElementById("logs");
-        const msg = data.status === 'success' ? `✅ Order Placed (${data.broker}): ${data.orderId}` : `❌ Error: ${data.message}`;
+        const msg = data.status === 'success'
+          ? `✅ Order Placed (${data.broker}): ${data.orderId}`
+          : `❌ Error: ${data.message}`;
         logDiv.innerHTML += `<p>${new Date().toLocaleTimeString()} - ${msg}</p>`;
       });
     }
