@@ -286,9 +286,9 @@ Watchlist with latest prices:
 
 @app.route("/connect-angel", methods=["POST"])
 def connect_angel():
-    import pyotp  # ✅ Import pyotp for TOTP generation
+    import pyotp
     from SmartApi.smartConnect import SmartConnect
-    from google_sheets_helper import write_token_to_sheet  # ✅ Adjust if it's in a subfolder
+    from google_sheets_helper import get_sheet  # or your write_token_to_sheet if you abstracted it
 
     data = request.get_json()
     userId = data.get("userId")
@@ -303,23 +303,20 @@ def connect_angel():
         return jsonify({"status": "error", "message": "User not found"}), 404
 
     try:
-        # ✅ Generate TOTP from backend secret
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
         totp = pyotp.TOTP(totp_secret).now()
 
-        # ✅ Initialize SmartConnect
         SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         session = SmartApi.generateSession(clientId, password, totp)
-
         token = session["data"]["jwtToken"]
 
-        # ✅ Save to local users file
         users[userId]["auth_token"] = token
         users[userId]["broker"] = "angelone"
         save_users(users)
 
-        # ✅ Save token to Google Sheets
-        write_token_to_sheet(userId, token)
+        # ✅ Write token to Google Sheet
+        sheet = get_sheet()
+        sheet.append_row([userId, clientId, token, datetime.now().isoformat()])
 
         return jsonify({
             "status": "success",
@@ -329,6 +326,7 @@ def connect_angel():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 @app.route("/signup", methods=["POST"])
@@ -474,12 +472,9 @@ def webhook(userId):
 
 @app.route("/webhook-angelone/<userId>", methods=["POST"])
 def webhook_angelone(userId):
-    users = load_users()
-    if userId not in users or "auth_token" not in users[userId]:
-        return jsonify({"status": "error", "message": "Token not found. Please connect account again."}), 401
-
-    user = users[userId]
-    token = user["auth_token"]
+    from SmartApi.smartConnect import SmartConnect
+    from google_sheets_helper import get_sheet
+    import pyotp
 
     data = request.get_json()
     symbol = data.get("symbol")
@@ -489,21 +484,34 @@ def webhook_angelone(userId):
     if not symbol or not action:
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
+    # ✅ Fetch token from Google Sheets
     try:
-        from SmartApi.smartConnect import SmartConnect
+        sheet = get_sheet()
+        token = None
+        for row in sheet.get_all_values():
+            if row[0] == userId:
+                token = row[2]
+                break
+        if not token:
+            return jsonify({"status": "error", "message": "Token not found for user"}), 403
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Sheet error: {e}"}), 500
+
+    try:
         SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         SmartApi.setAccessToken(token)
 
-        # symbol mapping
+        # ✅ Symbol token mapping
         symbol_map = {
             "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333",
             "ICICIBANK": "4963", "SBIN": "3045", "ITC": "1660", "KOTAKBANK": "1922",
             "HINDUNILVR": "1394", "LT": "11483", "BHARTIARTL": "10604", "AXISBANK": "5900",
             "MARUTI": "509", "BAJFINANCE": "317", "ASIANPAINT": "604"
         }
+
         token_id = symbol_map.get(symbol.upper())
         if not token_id:
-            return jsonify({"status": "error", "message": "Unsupported symbol"}), 400
+            return jsonify({"status": "error", "message": f"Symbol '{symbol}' not supported"}), 400
 
         orderparams = {
             "variety": "NORMAL",
@@ -518,7 +526,12 @@ def webhook_angelone(userId):
         }
 
         order_id = SmartApi.placeOrder(orderparams)
-        return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"})
+
+        return jsonify({
+            "status": "success",
+            "orderId": order_id,
+            "broker": "angelone"
+        })
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
