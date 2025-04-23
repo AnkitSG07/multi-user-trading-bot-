@@ -9,3 +9,5 @@ pyotp>=2.7.0
 pycryptodome==3.22.0
 logzero==1.7.0
 -e ./SmartApi
+gspread
+oauth2client
