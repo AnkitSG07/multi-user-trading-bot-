@@ -133,13 +133,8 @@
       .then(res => res.json())
       .then(data => {
         alert(data.message);
-        return fetch("https://multi-user-trading-bot.onrender.com/connect-broker", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, broker: "angelone" })
-        });
+        document.getElementById("brokerDisplay").textContent = "angelone";
       })
-      .then(() => location.reload())
       .catch(err => alert("❌ Connect Error: " + err));
     }
 
@@ -164,7 +159,7 @@
         } else {
           if (data.message.includes("Invalid Token")) {
             msg = "❌ Invalid Token: Please reconnect your Angel One account.";
-          } else if (data.message.includes("insufficient")) {
+          } else if (data.message.toLowerCase().includes("insufficient")) {
             msg = "❌ Insufficient Funds: Unable to place order.";
           } else {
             msg = `❌ Error: ${data.message}`;
