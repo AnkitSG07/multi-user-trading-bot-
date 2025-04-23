@@ -301,13 +301,15 @@ def connect_angel():
     try:
         from SmartApi.smartConnect import SmartConnect  # Corrected import
         SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        session = SmartApi.generateSession(clientId, password, totp)
-
-        users[userId]["auth_token"] = session["data"]["jwtToken"]
-        users[userId]["broker"] = "angelone"
-        save_users(users)
-
-        return jsonify({"status": "success", "message": "✅ Angel One connected successfully"})
+        session = smartApi.generateSession(clientId, password, totp)
+        if not session or "data" not in session or "jwtToken" not in session["data"]:
+            return jsonify({"status": "error", "message": "Login failed or invalid response from Angel API."}), 500
+            
+            users[userId]["auth_token"] = session["data"]["jwtToken"]
+            users[userId]["broker"] = "angelone"
+            save_users(users)
+            
+            return jsonify({"status": "success", "message": "✅ Angel One connected successfully"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
