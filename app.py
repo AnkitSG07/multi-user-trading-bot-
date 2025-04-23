@@ -9,7 +9,7 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import google.generativeai as genai
 from google.generativeai import GenerativeModel
-from smartapi_sdk.smartConnect import SmartConnect  # Corrected import
+from smartapi.smartConnect import SmartConnect
 
 fernet = Fernet(os.environ["FERNET_KEY"])
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -132,7 +132,7 @@ def place_angel_trade():
     quantity = int(data['quantity'])
 
     try:
-        from smartapi_sdk.smartConnect import SmartConnect  # Corrected import
+        from smartapi.smartConnect import SmartConnect  # Corrected import
         import os
 
         api_key = os.getenv('ANGEL_API_KEY')
@@ -296,7 +296,7 @@ def connect_angel():
         return jsonify({"status": "error", "message": "User not found"}), 404
 
     try:
-        from smartapi_sdk.smartConnect import SmartConnect  # Corrected import
+        from smartapi.smartConnect import SmartConnect  # Corrected import
         smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         session = smartApi.generateSession(clientId, password, totp)
 
@@ -466,7 +466,7 @@ def webhook_angelone(userId):
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
     try:
-        from smartapi_sdk.smartConnect import SmartConnect  # Corrected import
+        from smartapi.smartConnect import SmartConnect  # Corrected import
         smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         # TODO: Implement token refresh here.  This is CRUCIAL for long-term use.
         smartApi.setAccessToken(user["angelone"]["auth_token"])  # This token will expire!
