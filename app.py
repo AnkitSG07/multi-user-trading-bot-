@@ -3,6 +3,7 @@ from flask_cors import CORS
 import alpaca_trade_api as tradeapi
 import json
 import os
+import sys, os
 import requests
 import hashlib
 from datetime import datetime
@@ -10,6 +11,8 @@ from cryptography.fernet import Fernet
 import google.generativeai as genai
 from google.generativeai import GenerativeModel
 from smartapi.smartConnect import SmartConnect
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 fernet = Fernet(os.environ["FERNET_KEY"])
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
