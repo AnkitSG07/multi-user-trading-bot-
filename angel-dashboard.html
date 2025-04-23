@@ -73,6 +73,7 @@
     <p><strong>User ID:</strong> <span id="userIdDisplay"></span></p>
     <p><strong>Broker:</strong> <span id="brokerDisplay">Loading...</span></p>
     <p><strong>Strategy:</strong> <span id="strategyDisplay">Loading...</span></p>
+    <p><strong>Token:</strong> <span id="tokenDisplay">Not available</span></p>
   </section>
 
   <section>
@@ -110,6 +111,9 @@
         .then(data => {
           document.getElementById("brokerDisplay").textContent = data.broker || "N/A";
           document.getElementById("strategyDisplay").textContent = data.strategy || "N/A";
+          if (data.auth_token) {
+            document.getElementById("tokenDisplay").textContent = data.auth_token;
+          }
 
           const broker = "angelone";
           const finalURL = `https://multi-user-trading-bot.onrender.com/webhook-${broker}/${userId}`;
@@ -134,6 +138,9 @@
       .then(data => {
         alert(data.message);
         document.getElementById("brokerDisplay").textContent = "angelone";
+        if (data.auth_token) {
+          document.getElementById("tokenDisplay").textContent = data.auth_token;
+        }
       })
       .catch(err => alert("❌ Connect Error: " + err));
     }
