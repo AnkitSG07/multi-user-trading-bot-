@@ -8,4 +8,4 @@ google.generativeai==0.8.5
 pyotp==2.9.0
 pycryptodome==3.22.0
 logzero==1.7.0
-git+https://github.com/<your-username>/smartapi-python.git
+git+https://github.com/AnkitSG07/smartapi-python.git
