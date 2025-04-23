@@ -76,7 +76,6 @@
     <input type="text" id="angelClientId" placeholder="Client ID">
     <input type="password" id="angelPassword" placeholder="Password">
     <button onclick="connectAngelOne()">Connect</button>
-    <p>🔄 Current OTP: <span id="otpDisplay">---</span></p>
   </section>
 
   <section>
@@ -95,23 +94,7 @@
     <div id="logs"></div>
   </section>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <script>
-    function generateOTP(secret) {
-      try {
-        const epoch = Math.floor(Date.now() / 1000);
-        const time = Math.floor(epoch / 30);
-        const key = CryptoJS.enc.Hex.parse(CryptoJS.SHA1(secret).toString());
-        const timeHex = ('000000000000000' + time.toString(16)).slice(-16);
-        const hmac = CryptoJS.HmacSHA1(CryptoJS.enc.Hex.parse(timeHex), key);
-        const offset = parseInt(hmac.toString().substr(-1), 16);
-        const otp = (parseInt(hmac.toString().substr(offset * 2, 8), 16) & 0x7fffffff) + '';
-        return otp.slice(-6);
-      } catch (e) {
-        return '000000';
-      }
-    }
-
     document.addEventListener("DOMContentLoaded", () => {
       const userId = localStorage.getItem("userId") || prompt("Enter your User ID:");
       localStorage.setItem("userId", userId);
@@ -129,11 +112,6 @@
           webhookDisplay.textContent = finalURL;
           document.getElementById("webhookTitle").textContent = `🔗 Your ${broker.toUpperCase()} Webhook URL`;
         });
-
-      const initialSecret = document.getElementById("angelTOTP").value;
-      if (initialSecret) {
-        document.getElementById("otpDisplay").innerText = generateOTP(initialSecret);
-      }
     });
 
     function connectAngelOne() {
@@ -142,14 +120,11 @@
 
       const clientId = document.getElementById("angelClientId").value;
       const password = document.getElementById("angelPassword").value;
-      const totpSecret = document.getElementById("angelTOTP").value;
-
-      const generatedOTP = generateOTP(totpSecret);
 
       fetch("https://multi-user-trading-bot.onrender.com/connect-angel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, clientId, password, totp: generatedOTP })
+        body: JSON.stringify({ userId, clientId, password })
       })
       .then(res => res.json())
       .then(data => {
@@ -183,14 +158,6 @@
         logDiv.innerHTML += `<p>${new Date().toLocaleTimeString()} - ${msg}</p>`;
       });
     }
-
-    setInterval(() => {
-      const totpSecret = document.getElementById("angelTOTP").value;
-      if (totpSecret) {
-        const otp = generateOTP(totpSecret);
-        document.getElementById("otpDisplay").innerText = otp;
-      }
-    }, 1000);
   </script>
 </body>
 </html>
