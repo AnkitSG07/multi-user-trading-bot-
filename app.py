@@ -462,17 +462,12 @@ def webhook(userId):
 
 @app.route("/webhook-angelone/<userId>", methods=["POST"])
 def webhook_angelone(userId):
+    import pyotp
     from SmartApi.smartConnect import SmartConnect
-    from datetime import datetime
-    import os
 
     users = load_users()
-    if userId not in users or "angelone" not in users[userId]:
-        return jsonify({"status": "error", "message": "User or Angel One credentials not found"}), 404
-
-    auth_token = users[userId].get("auth_token")
-    if not auth_token:
-        return jsonify({"status": "error", "message": "Auth token missing, please reconnect"}), 403
+    if userId not in users:
+        return jsonify({"status": "error", "message": "User not found"}), 404
 
     data = request.get_json()
     symbol = data.get("symbol")
@@ -483,8 +478,14 @@ def webhook_angelone(userId):
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
     try:
+        # Always re-authenticate before placing trade
+        clientId = os.getenv("ANGEL_CLIENT_ID")
+        password = os.getenv("ANGEL_PASSWORD")
+        totp = pyotp.TOTP(os.getenv("ANGEL_TOTP_SECRET")).now()
+
         SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        SmartApi.setAccessToken(auth_token)
+        session = SmartApi.generateSession(clientId, password, totp)
+        SmartApi.setAccessToken(session["data"]["jwtToken"])
 
         symbol_map = {
             "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
@@ -520,15 +521,20 @@ def webhook_angelone(userId):
             "order_id": order_id
         })
 
-        return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"})
+        return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"}), 200
 
     except Exception as e:
-        msg = str(e)
-        if "AG8001" in msg or "Invalid Token" in msg:
-            msg = "Invalid Token: Please reconnect your Angel One account."
-        elif "insufficient" in msg.lower():
-            msg = "Insufficient Funds: Unable to place order."
-        return jsonify({"status": "error", "message": msg})
+        error_msg = str(e)
+        log_trade(userId, {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "symbol": symbol,
+            "action": action,
+            "quantity": quantity,
+            "broker": "angelone",
+            "status": "❌",
+            "error": error_msg
+        })
+        return jsonify({"status": "error", "message": error_msg}), 200
 
 
 @app.route("/portfolio/<userId>", methods=["GET"])
