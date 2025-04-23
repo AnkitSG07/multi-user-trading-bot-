@@ -308,8 +308,8 @@ def connect_angel():
         totp = pyotp.TOTP(totp_secret).now()
 
         # ✅ Initialize SmartConnect before using it
-        smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        session = smartApi.generateSession(clientId, password, totp)
+        SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
+        session = SmartApi.generateSession(clientId, password, totp)
 
         users[userId]["auth_token"] = session["data"]["jwtToken"]
         users[userId]["broker"] = "angelone"
