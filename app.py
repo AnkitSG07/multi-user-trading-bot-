@@ -463,15 +463,17 @@ def webhook(userId):
 @app.route("/webhook-angelone/<userId>", methods=["POST"])
 def webhook_angelone(userId):
     from SmartApi.smartConnect import SmartConnect
-    import pyotp
-    import os
     from datetime import datetime
+    import os
 
     users = load_users()
     if userId not in users or "angelone" not in users[userId]:
         return jsonify({"status": "error", "message": "User or Angel One credentials not found"}), 404
 
-    user = users[userId]
+    auth_token = users[userId].get("auth_token")
+    if not auth_token:
+        return jsonify({"status": "error", "message": "Auth token missing, please reconnect"}), 403
+
     data = request.get_json()
     symbol = data.get("symbol")
     action = data.get("action", "").upper()
@@ -481,15 +483,8 @@ def webhook_angelone(userId):
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
     try:
-        # ✅ Login once with your Render-stored credentials
         SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        clientId = os.getenv("ANGEL_CLIENT_ID")
-        password = os.getenv("ANGEL_PASSWORD")
-        totp_secret = os.getenv("ANGEL_TOTP_SECRET")
-        totp = pyotp.TOTP(totp_secret).now()
-
-        session = SmartApi.generateSession(clientId, password, totp)
-        SmartApi.setAccessToken(session["data"]["jwtToken"])
+        SmartApi.setAccessToken(auth_token)
 
         symbol_map = {
             "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
@@ -528,12 +523,12 @@ def webhook_angelone(userId):
         return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"})
 
     except Exception as e:
-        message = str(e)
-        if "AG8001" in message or "Invalid Token" in message:
-            message = "Invalid Token: Please reconnect your Angel One account."
-        elif "insufficient" in message.lower():
-            message = "Insufficient Funds: Unable to place order."
-        return jsonify({"status": "error", "message": message})
+        msg = str(e)
+        if "AG8001" in msg or "Invalid Token" in msg:
+            msg = "Invalid Token: Please reconnect your Angel One account."
+        elif "insufficient" in msg.lower():
+            msg = "Insufficient Funds: Unable to place order."
+        return jsonify({"status": "error", "message": msg})
 
 
 @app.route("/portfolio/<userId>", methods=["GET"])
