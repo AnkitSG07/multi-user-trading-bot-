@@ -463,7 +463,8 @@ def webhook(userId):
 @app.route("/webhook-angelone/<userId>", methods=["POST"])
 def webhook_angelone(userId):
     import pyotp
-    from SmartApi.smartConnect import SmartConnect  # Make sure this is the correct import
+    import traceback
+    from SmartApi.smartConnect import SmartConnect  # ✅ Make sure this is correct
 
     users = load_users()
     if userId not in users:
@@ -478,18 +479,17 @@ def webhook_angelone(userId):
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
     try:
-        # Step 1: Fresh login to get JWT token
+        # ✅ Step 1: Regenerate session on each call
         SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        clientId = os.getenv("ANGEL_CLIENT_ID")
+        client_id = os.getenv("ANGEL_CLIENT_ID")
         password = os.getenv("ANGEL_PASSWORD")
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
+
         totp = pyotp.TOTP(totp_secret).now()
+        session = SmartApi.generateSession(client_id, password, totp)
+        SmartApi.setAccessToken(session["data"]["jwtToken"])
 
-        session = SmartApi.generateSession(clientId, password, totp)
-        jwt_token = session["data"]["jwtToken"]
-        SmartApi.setAccessToken(jwt_token)
-
-        # Step 2: Prepare order
+        # ✅ Step 2: Prepare token map and order
         symbol_map = {
             "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
             "SBIN": "3045", "ITC": "1660", "KOTAKBANK": "1922", "HINDUNILVR": "1394", "LT": "11483",
@@ -514,7 +514,6 @@ def webhook_angelone(userId):
 
         order_id = SmartApi.placeOrder(orderparams)
 
-        # Step 3: Log the trade
         log_trade(userId, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
@@ -537,22 +536,8 @@ def webhook_angelone(userId):
             "status": "❌",
             "error": str(e)
         })
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-    except Exception as e:
-        log_trade(userId, {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "symbol": symbol,
-            "action": action,
-            "quantity": quantity,
-            "broker": "angelone",
-            "status": "❌",
-            "error": str(e)
-        })
+        print("Traceback:", traceback.format_exc())  # ✅ Optional for debugging
         return jsonify({"status": "error", "message": f"❌ {str(e)}"}), 500
-
-
-
 
 @app.route("/portfolio/<userId>", methods=["GET"])
 def get_portfolio(userId):
