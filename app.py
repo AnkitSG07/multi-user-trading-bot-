@@ -304,7 +304,6 @@ def connect_angel():
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
         otp = pyotp.TOTP(totp_secret).now()
 
-        from smartapi_sdk.smartConnect import SmartConnect
         smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         session = smartApi.generateSession(clientId, password, otp)
 
