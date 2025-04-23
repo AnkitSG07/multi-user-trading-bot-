@@ -8,4 +8,4 @@ google.generativeai==0.8.5
 pyotp==2.9.0
 pycryptodome==3.22.0
 logzero==1.7.0
-git+https://github.com/angel-one/SmartAPI-SmartConnect.git
+git clone https://github.com/AnkitSG07/SmartAPI-SmartConnect.git
