@@ -463,13 +463,13 @@ def webhook(userId):
 @app.route("/webhook-angelone/<userId>", methods=["POST"])
 def webhook_angelone(userId):
     import pyotp
-    import traceback
-    from SmartApi.smartConnect import SmartConnect  # ✅ Make sure this is correct
+    from SmartApi.smartConnect import SmartConnect
 
     users = load_users()
-    if userId not in users:
-        return jsonify({"status": "error", "message": "User not found"}), 404
+    if userId not in users or "angelone" not in users[userId]:
+        return jsonify({"status": "error", "message": "User or Angel One credentials not found"}), 404
 
+    user = users[userId]
     data = request.get_json()
     symbol = data.get("symbol")
     action = data.get("action", "").upper()
@@ -479,17 +479,14 @@ def webhook_angelone(userId):
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
     try:
-        # ✅ Step 1: Regenerate session on each call
         SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        client_id = os.getenv("ANGEL_CLIENT_ID")
+        clientId = os.getenv("ANGEL_CLIENT_ID")
         password = os.getenv("ANGEL_PASSWORD")
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
-
         totp = pyotp.TOTP(totp_secret).now()
-        session = SmartApi.generateSession(client_id, password, totp)
+        session = SmartApi.generateSession(clientId, password, totp)
         SmartApi.setAccessToken(session["data"]["jwtToken"])
 
-        # ✅ Step 2: Prepare token map and order
         symbol_map = {
             "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
             "SBIN": "3045", "ITC": "1660", "KOTAKBANK": "1922", "HINDUNILVR": "1394", "LT": "11483",
@@ -514,6 +511,13 @@ def webhook_angelone(userId):
 
         order_id = SmartApi.placeOrder(orderparams)
 
+        # Null order ID could mean invalid token or insufficient funds
+        if order_id is None:
+            return jsonify({
+                "status": "error",
+                "message": "Order ID is null. Likely due to Invalid Token or Insufficient Funds."
+            }), 400
+
         log_trade(userId, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
@@ -527,17 +531,8 @@ def webhook_angelone(userId):
         return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"}), 200
 
     except Exception as e:
-        log_trade(userId, {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "symbol": symbol,
-            "action": action,
-            "quantity": quantity,
-            "broker": "angelone",
-            "status": "❌",
-            "error": str(e)
-        })
-        print("Traceback:", traceback.format_exc())  # ✅ Optional for debugging
-        return jsonify({"status": "error", "message": f"❌ {str(e)}"}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route("/portfolio/<userId>", methods=["GET"])
 def get_portfolio(userId):
