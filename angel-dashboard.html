@@ -104,6 +104,10 @@
       const userId = localStorage.getItem("userId") || prompt("Enter your User ID:");
       localStorage.setItem("userId", userId);
       document.getElementById("userIdDisplay").textContent = userId;
+      const savedToken = localStorage.getItem("auth_token");
+      if (savedToken) {
+        document.getElementById("tokenDisplay").textContent = savedToken;
+      }
 
       const webhookDisplay = document.getElementById("webhookDisplay");
       fetch("https://multi-user-trading-bot.onrender.com/user-info/" + userId)
@@ -122,28 +126,41 @@
         });
     });
 
-    function connectAngelOne() {
-      const userId = localStorage.getItem("userId") || prompt("Enter your User ID:");
-      localStorage.setItem("userId", userId);
+function connectAngelOne() {
+  const userId = localStorage.getItem("userId") || prompt("Enter your User ID:");
+  localStorage.setItem("userId", userId);
 
-      const clientId = document.getElementById("angelClientId").value;
-      const password = document.getElementById("angelPassword").value;
+  const clientId = document.getElementById("angelClientId").value;
+  const password = document.getElementById("angelPassword").value;
 
-      fetch("https://multi-user-trading-bot.onrender.com/connect-angel", {
+  fetch("https://multi-user-trading-bot.onrender.com/connect-angel", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, clientId, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+
+    if (data.auth_token) {
+      localStorage.setItem("auth_token", data.auth_token);
+      document.getElementById("tokenDisplay").textContent = data.auth_token;
+    } else {
+      document.getElementById("tokenDisplay").textContent = "Not available";
+    }
+
+    // Only send broker connection request if token is present
+    if (data.auth_token) {
+      return fetch("https://multi-user-trading-bot.onrender.com/connect-broker", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, clientId, password })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-        document.getElementById("brokerDisplay").textContent = "angelone";
-        if (data.auth_token) {
-          document.getElementById("tokenDisplay").textContent = data.auth_token;
-        }
-      })
-      .catch(err => alert("❌ Connect Error: " + err));
+        body: JSON.stringify({ userId, broker: "angelone" })
+      });
     }
+  })
+  .catch(err => alert("❌ Connect Error: " + err));
+}
+
 
     function placeTrade() {
       const userId = localStorage.getItem("userId");
