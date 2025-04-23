@@ -7,7 +7,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 def get_sheet(sheet_name="Angel token"):
     # 📥 Fetch the JSON credentials from your GitHub repo
-    repo_url = "https://raw.githubusercontent.com/AnkitSG07/service_account.json/main/service_account.json"
+    repo_url = "https://raw.githubusercontent.com/AnkitSG07/multi-user-trading-bot-/main/service_account.json"
     response = requests.get(repo_url)
     if response.status_code != 200:
         raise Exception("Failed to fetch service_account.json from GitHub.")
