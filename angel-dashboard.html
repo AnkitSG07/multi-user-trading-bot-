@@ -147,10 +147,17 @@
 
     function placeTrade() {
       const userId = localStorage.getItem("userId");
+      const token = document.getElementById("tokenDisplay").textContent;
+    
+      if (token === "Not available") {
+        alert("❌ You must connect to Angel One first.");
+        return;
+      }
+    
       const symbol = document.getElementById("symbol").value;
       const action = document.getElementById("action").value;
       const quantity = document.getElementById("quantity").value;
-
+    
       fetch("https://multi-user-trading-bot.onrender.com/webhook-angelone/" + userId, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
