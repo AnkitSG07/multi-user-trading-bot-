@@ -481,8 +481,8 @@ def webhook_angelone(userId):
         password = os.getenv("ANGEL_PASSWORD")
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
         totp = pyotp.TOTP(totp_secret).now()
-        session = smartApi.generateSession(clientId, password, totp)
-        smartApi.setAccessToken(session["data"]["jwtToken"])
+        session = SmartApi.generateSession(clientId, password, totp)
+        SmartApi.setAccessToken(session["data"]["jwtToken"])
 
         symbol_map = {
             "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
