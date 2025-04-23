@@ -462,12 +462,12 @@ def webhook(userId):
 
 @app.route("/webhook-angelone/<userId>", methods=["POST"])
 def webhook_angelone(userId):
-    import pyotp
-    from SmartApi.smartConnect import SmartConnect
-
     users = load_users()
-    if userId not in users:
-        return jsonify({"status": "error", "message": "User not found"}), 404
+    if userId not in users or "auth_token" not in users[userId]:
+        return jsonify({"status": "error", "message": "Token not found. Please connect account again."}), 401
+
+    user = users[userId]
+    token = user["auth_token"]
 
     data = request.get_json()
     symbol = data.get("symbol")
@@ -478,29 +478,25 @@ def webhook_angelone(userId):
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
     try:
-        # Always re-authenticate before placing trade
-        clientId = os.getenv("ANGEL_CLIENT_ID")
-        password = os.getenv("ANGEL_PASSWORD")
-        totp = pyotp.TOTP(os.getenv("ANGEL_TOTP_SECRET")).now()
-
+        from SmartApi.smartConnect import SmartConnect
         SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        session = SmartApi.generateSession(clientId, password, totp)
-        SmartApi.setAccessToken(session["data"]["jwtToken"])
+        SmartApi.setAccessToken(token)
 
+        # symbol mapping
         symbol_map = {
-            "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
-            "SBIN": "3045", "ITC": "1660", "KOTAKBANK": "1922", "HINDUNILVR": "1394", "LT": "11483",
-            "BHARTIARTL": "10604", "AXISBANK": "5900", "MARUTI": "509", "BAJFINANCE": "317", "ASIANPAINT": "604"
+            "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333",
+            "ICICIBANK": "4963", "SBIN": "3045", "ITC": "1660", "KOTAKBANK": "1922",
+            "HINDUNILVR": "1394", "LT": "11483", "BHARTIARTL": "10604", "AXISBANK": "5900",
+            "MARUTI": "509", "BAJFINANCE": "317", "ASIANPAINT": "604"
         }
-
-        token = symbol_map.get(symbol.upper())
-        if not token:
-            return jsonify({"status": "error", "message": f"Symbol '{symbol}' not supported"}), 400
+        token_id = symbol_map.get(symbol.upper())
+        if not token_id:
+            return jsonify({"status": "error", "message": "Unsupported symbol"}), 400
 
         orderparams = {
             "variety": "NORMAL",
             "tradingsymbol": symbol.upper(),
-            "symboltoken": token,
+            "symboltoken": token_id,
             "transactiontype": action,
             "exchange": "NSE",
             "ordertype": "MARKET",
@@ -510,31 +506,11 @@ def webhook_angelone(userId):
         }
 
         order_id = SmartApi.placeOrder(orderparams)
-
-        log_trade(userId, {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "symbol": symbol,
-            "action": action,
-            "quantity": quantity,
-            "broker": "angelone",
-            "status": "✅",
-            "order_id": order_id
-        })
-
-        return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"}), 200
+        return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"})
 
     except Exception as e:
-        error_msg = str(e)
-        log_trade(userId, {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "symbol": symbol,
-            "action": action,
-            "quantity": quantity,
-            "broker": "angelone",
-            "status": "❌",
-            "error": error_msg
-        })
-        return jsonify({"status": "error", "message": error_msg}), 200
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 @app.route("/portfolio/<userId>", methods=["GET"])
