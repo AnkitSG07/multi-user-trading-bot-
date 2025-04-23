@@ -51,6 +51,10 @@
       background-color: #0d1117;
       border-radius: 6px;
     }
+    .error-text {
+      color: #f85149;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -107,7 +111,7 @@
           document.getElementById("brokerDisplay").textContent = data.broker || "N/A";
           document.getElementById("strategyDisplay").textContent = data.strategy || "N/A";
 
-          const broker = "angelone"; // Always override for this dashboard
+          const broker = "angelone";
           const finalURL = `https://multi-user-trading-bot.onrender.com/webhook-${broker}/${userId}`;
           webhookDisplay.textContent = finalURL;
           document.getElementById("webhookTitle").textContent = `🔗 Your ${broker.toUpperCase()} Webhook URL`;
@@ -135,7 +139,8 @@
           body: JSON.stringify({ userId, broker: "angelone" })
         });
       })
-      .then(() => location.reload());
+      .then(() => location.reload())
+      .catch(err => alert("❌ Connect Error: " + err));
     }
 
     function placeTrade() {
@@ -152,10 +157,24 @@
       .then(res => res.json())
       .then(data => {
         const logDiv = document.getElementById("logs");
-        const msg = data.status === 'success'
-          ? `✅ Order Placed (${data.broker}): ${data.orderId}`
-          : `❌ Error: ${data.message}`;
-        logDiv.innerHTML += `<p>${new Date().toLocaleTimeString()} - ${msg}</p>`;
+        let msg = "";
+
+        if (data.status === 'success') {
+          msg = `✅ Order Placed (${data.broker}): ${data.orderId}`;
+        } else {
+          if (data.message.includes("Invalid Token")) {
+            msg = "❌ Invalid Token: Please reconnect your Angel One account.";
+          } else if (data.message.includes("insufficient")) {
+            msg = "❌ Insufficient Funds: Unable to place order.";
+          } else {
+            msg = `❌ Error: ${data.message}`;
+          }
+        }
+        logDiv.innerHTML += `<p>${new Date().toLocaleTimeString()} - <span class="${data.status !== 'success' ? 'error-text' : ''}">${msg}</span></p>`;
+      })
+      .catch(err => {
+        const logDiv = document.getElementById("logs");
+        logDiv.innerHTML += `<p>${new Date().toLocaleTimeString()} - ❌ Network Error: ${err}</p>`;
       });
     }
   </script>
