@@ -301,6 +301,7 @@ def connect_angel():
         return jsonify({"status": "error", "message": "User not found"}), 404
 
     try:
+        from SmartApi.smartConnect import SmartConnect
         # ✅ Generate TOTP from backend secret
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
         totp = pyotp.TOTP(totp_secret).now()
