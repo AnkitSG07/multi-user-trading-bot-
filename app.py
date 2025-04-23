@@ -287,6 +287,8 @@ Watchlist with latest prices:
 @app.route("/connect-angel", methods=["POST"])
 def connect_angel():
     import pyotp  # ✅ Import pyotp for TOTP generation
+    from SmartApi.smartConnect import SmartConnect
+    from google_sheets_helper import write_token_to_sheet  # ✅ Adjust if it's in a subfolder
 
     data = request.get_json()
     userId = data.get("userId")
@@ -301,23 +303,33 @@ def connect_angel():
         return jsonify({"status": "error", "message": "User not found"}), 404
 
     try:
-        from SmartApi.smartConnect import SmartConnect
-
         # ✅ Generate TOTP from backend secret
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
         totp = pyotp.TOTP(totp_secret).now()
 
-        # ✅ Initialize SmartConnect before using it
+        # ✅ Initialize SmartConnect
         SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         session = SmartApi.generateSession(clientId, password, totp)
 
-        users[userId]["auth_token"] = session["data"]["jwtToken"]
+        token = session["data"]["jwtToken"]
+
+        # ✅ Save to local users file
+        users[userId]["auth_token"] = token
         users[userId]["broker"] = "angelone"
         save_users(users)
 
-        return jsonify({"status": "success", "message": "✅ Angel One connected successfully", "auth_token": session["data"]["jwtToken"]})
+        # ✅ Save token to Google Sheets
+        write_token_to_sheet(userId, token)
+
+        return jsonify({
+            "status": "success",
+            "message": "✅ Angel One connected successfully",
+            "auth_token": token
+        })
+
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route("/signup", methods=["POST"])
 def signup():
