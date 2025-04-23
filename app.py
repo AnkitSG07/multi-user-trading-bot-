@@ -462,7 +462,10 @@ def webhook(userId):
 
 @app.route("/webhook-angelone/<userId>", methods=["POST"])
 def webhook_angelone(userId):
+    import pyotp
+    from SmartApi.smartConnect import SmartConnect 
     users = load_users()
+
     if userId not in users or "angelone" not in users[userId]:
         return jsonify({"status": "error", "message": "User or Angel One credentials not found"}), 404
 
@@ -481,6 +484,7 @@ def webhook_angelone(userId):
         password = os.getenv("ANGEL_PASSWORD")
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
         totp = pyotp.TOTP(totp_secret).now()
+
         session = SmartApi.generateSession(clientId, password, totp)
         SmartApi.setAccessToken(session["data"]["jwtToken"])
 
@@ -531,6 +535,7 @@ def webhook_angelone(userId):
             "error": str(e)
         })
         return jsonify({"status": "error", "message": f"❌ {str(e)}"}), 500
+
 
 
 
