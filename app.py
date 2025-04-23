@@ -10,7 +10,7 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import google.generativeai as genai
 from google.generativeai import GenerativeModel
-from smartapi.smartConnect import SmartConnect
+from SmartApi.smartConnect import SmartConnect
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -135,7 +135,7 @@ def place_angel_trade():
     quantity = int(data['quantity'])
 
     try:
-        from smartapi.smartConnect import SmartConnect  # Corrected import
+        from SmartApi.smartConnect import SmartConnect  # Corrected import
         import os
 
         api_key = os.getenv('ANGEL_API_KEY')
@@ -143,8 +143,8 @@ def place_angel_trade():
         password = os.getenv('ANGEL_PASSWORD')
         totp = os.getenv('ANGEL_TOTP')
 
-        smartapi = SmartConnect(api_key)
-        session = smartapi.generateSession(clientId, password, totp)
+        SmartApi = SmartConnect(api_key)
+        session = SmartApi.generateSession(clientId, password, totp)
 
         symbol_map = {"RELIANCE": "2885", "INFY": "1594"}  # Extend this
         token = symbol_map.get(symbol.upper())
@@ -163,7 +163,7 @@ def place_angel_trade():
             "quantity": quantity
         }
 
-        orderId = smartapi.placeOrder(orderparams)
+        orderId = SmartApi.placeOrder(orderparams)
         return jsonify({"status": "success", "orderId": orderId})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
@@ -299,9 +299,9 @@ def connect_angel():
         return jsonify({"status": "error", "message": "User not found"}), 404
 
     try:
-        from smartapi.smartConnect import SmartConnect  # Corrected import
-        smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        session = smartApi.generateSession(clientId, password, totp)
+        from SmartApi.smartConnect import SmartConnect  # Corrected import
+        SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
+        session = SmartApi.generateSession(clientId, password, totp)
 
         users[userId]["auth_token"] = session["data"]["jwtToken"]
         users[userId]["broker"] = "angelone"
@@ -469,10 +469,9 @@ def webhook_angelone(userId):
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
     try:
-        from smartapi.smartConnect import SmartConnect  # Corrected import
-        smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
+        SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         # TODO: Implement token refresh here.  This is CRUCIAL for long-term use.
-        smartApi.setAccessToken(user["angelone"]["auth_token"])  # This token will expire!
+        SmartApi.setAccessToken(user["angelone"]["auth_token"])  # This token will expire!
 
         symbol_map = {
             "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
@@ -496,7 +495,7 @@ def webhook_angelone(userId):
             "quantity": quantity
         }
 
-        order_id = smartApi.placeOrder(orderparams)
+        order_id = SmartApi.placeOrder(orderparams)
 
         log_trade(userId, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
