@@ -285,13 +285,14 @@ Watchlist with latest prices:
 
 @app.route("/connect-angel", methods=["POST"])
 def connect_angel():
+    import pyotp  # ← Ensure it's imported here
+
     data = request.get_json()
     userId = data.get("userId")
     clientId = data.get("clientId")
     password = data.get("password")
-    totp = data.get("totp")
 
-    if not all([userId, clientId, password, totp]):
+    if not all([userId, clientId, password]):
         return jsonify({"status": "error", "message": "Missing credentials"}), 400
 
     users = load_users()
@@ -299,19 +300,22 @@ def connect_angel():
         return jsonify({"status": "error", "message": "User not found"}), 404
 
     try:
-        from SmartApi.smartConnect import SmartConnect  # Corrected import
-        SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        session = smartApi.generateSession(clientId, password, totp)
-        if not session or "data" not in session or "jwtToken" not in session["data"]:
-            return jsonify({"status": "error", "message": "Login failed or invalid response from Angel API."}), 500
-            
-            users[userId]["auth_token"] = session["data"]["jwtToken"]
-            users[userId]["broker"] = "angelone"
-            save_users(users)
-            
-            return jsonify({"status": "success", "message": "✅ Angel One connected successfully"})
+        # ✅ Generate TOTP from backend secret
+        totp_secret = os.getenv("ANGEL_TOTP_SECRET")
+        otp = pyotp.TOTP(totp_secret).now()
+
+        from smartapi_sdk.smartConnect import SmartConnect
+        smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
+        session = smartApi.generateSession(clientId, password, otp)
+
+        users[userId]["auth_token"] = session["data"]["jwtToken"]
+        users[userId]["broker"] = "angelone"
+        save_users(users)
+
+        return jsonify({"status": "success", "message": "✅ Angel One connected successfully"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
+
 
 
 @app.route("/signup", methods=["POST"])
