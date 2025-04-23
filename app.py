@@ -286,7 +286,7 @@ Watchlist with latest prices:
 
 @app.route("/connect-angel", methods=["POST"])
 def connect_angel():
-    import pyotp  # ← Ensure it's imported here
+    import pyotp  # ✅ Import pyotp for TOTP generation
 
     data = request.get_json()
     userId = data.get("userId")
@@ -302,13 +302,14 @@ def connect_angel():
 
     try:
         from SmartApi.smartConnect import SmartConnect
+
         # ✅ Generate TOTP from backend secret
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
         totp = pyotp.TOTP(totp_secret).now()
-        session = smartApi.generateSession(clientId, password, totp)
 
+        # ✅ Initialize SmartConnect before using it
         smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        session = smartApi.generateSession(clientId, password, otp)
+        session = smartApi.generateSession(clientId, password, totp)
 
         users[userId]["auth_token"] = session["data"]["jwtToken"]
         users[userId]["broker"] = "angelone"
@@ -317,8 +318,6 @@ def connect_angel():
         return jsonify({"status": "success", "message": "✅ Angel One connected successfully"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
-
-
 
 @app.route("/signup", methods=["POST"])
 def signup():
