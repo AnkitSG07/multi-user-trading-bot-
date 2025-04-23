@@ -463,13 +463,12 @@ def webhook(userId):
 @app.route("/webhook-angelone/<userId>", methods=["POST"])
 def webhook_angelone(userId):
     import pyotp
-    from SmartApi.smartConnect import SmartConnect 
+    from smartapi_sdk.smartConnect import SmartConnect  # Make sure this is the correct import
+
     users = load_users()
+    if userId not in users:
+        return jsonify({"status": "error", "message": "User not found"}), 404
 
-    if userId not in users or "angelone" not in users[userId]:
-        return jsonify({"status": "error", "message": "User or Angel One credentials not found"}), 404
-
-    user = users[userId]
     data = request.get_json()
     symbol = data.get("symbol")
     action = data.get("action", "").upper()
@@ -479,15 +478,18 @@ def webhook_angelone(userId):
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
     try:
-        SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
+        # Step 1: Fresh login to get JWT token
+        smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         clientId = os.getenv("ANGEL_CLIENT_ID")
         password = os.getenv("ANGEL_PASSWORD")
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
         totp = pyotp.TOTP(totp_secret).now()
 
-        session = SmartApi.generateSession(clientId, password, totp)
-        SmartApi.setAccessToken(session["data"]["jwtToken"])
+        session = smartApi.generateSession(clientId, password, totp)
+        jwt_token = session["data"]["jwtToken"]
+        smartApi.setAccessToken(jwt_token)
 
+        # Step 2: Prepare order
         symbol_map = {
             "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
             "SBIN": "3045", "ITC": "1660", "KOTAKBANK": "1922", "HINDUNILVR": "1394", "LT": "11483",
@@ -510,8 +512,9 @@ def webhook_angelone(userId):
             "quantity": quantity
         }
 
-        order_id = SmartApi.placeOrder(orderparams)
+        order_id = smartApi.placeOrder(orderparams)
 
+        # Step 3: Log the trade
         log_trade(userId, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
@@ -523,6 +526,18 @@ def webhook_angelone(userId):
         })
 
         return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"}), 200
+
+    except Exception as e:
+        log_trade(userId, {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "symbol": symbol,
+            "action": action,
+            "quantity": quantity,
+            "broker": "angelone",
+            "status": "❌",
+            "error": str(e)
+        })
+        return jsonify({"status": "error", "message": str(e)}), 500
 
     except Exception as e:
         log_trade(userId, {
