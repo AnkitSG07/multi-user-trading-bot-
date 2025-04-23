@@ -3,6 +3,7 @@ from flask_cors import CORS
 import alpaca_trade_api as tradeapi
 import json
 import os
+import pyotp
 import sys, os
 import requests
 import hashlib
@@ -302,7 +303,8 @@ def connect_angel():
     try:
         # ✅ Generate TOTP from backend secret
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
-        otp = pyotp.TOTP(totp_secret).now()
+        totp = pyotp.TOTP(totp_secret).now()
+        session = smartApi.generateSession(clientId, password, totp)
 
         smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         session = smartApi.generateSession(clientId, password, otp)
