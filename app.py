@@ -462,8 +462,10 @@ def webhook(userId):
 
 @app.route("/webhook-angelone/<userId>", methods=["POST"])
 def webhook_angelone(userId):
-    import pyotp
     from SmartApi.smartConnect import SmartConnect
+    import pyotp
+    import os
+    from datetime import datetime
 
     users = load_users()
     if userId not in users or "angelone" not in users[userId]:
@@ -479,11 +481,13 @@ def webhook_angelone(userId):
         return jsonify({"status": "error", "message": "Missing symbol or action"}), 400
 
     try:
+        # ✅ Login once with your Render-stored credentials
         SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         clientId = os.getenv("ANGEL_CLIENT_ID")
         password = os.getenv("ANGEL_PASSWORD")
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
         totp = pyotp.TOTP(totp_secret).now()
+
         session = SmartApi.generateSession(clientId, password, totp)
         SmartApi.setAccessToken(session["data"]["jwtToken"])
 
@@ -511,13 +515,6 @@ def webhook_angelone(userId):
 
         order_id = SmartApi.placeOrder(orderparams)
 
-        # Null order ID could mean invalid token or insufficient funds
-        if order_id is None:
-            return jsonify({
-                "status": "error",
-                "message": "Order ID is null. Likely due to Invalid Token or Insufficient Funds."
-            }), 400
-
         log_trade(userId, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "symbol": symbol,
@@ -528,10 +525,15 @@ def webhook_angelone(userId):
             "order_id": order_id
         })
 
-        return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"}), 200
+        return jsonify({"status": "success", "orderId": order_id, "broker": "angelone"})
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        message = str(e)
+        if "AG8001" in message or "Invalid Token" in message:
+            message = "Invalid Token: Please reconnect your Angel One account."
+        elif "insufficient" in message.lower():
+            message = "Insufficient Funds: Unable to place order."
+        return jsonify({"status": "error", "message": message})
 
 
 @app.route("/portfolio/<userId>", methods=["GET"])
