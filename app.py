@@ -475,8 +475,12 @@ def webhook_angelone(userId):
 
     try:
         SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
-        # TODO: Implement token refresh here.  This is CRUCIAL for long-term use.
-        SmartApi.setAccessToken(user["angelone"]["auth_token"])  # This token will expire!
+        clientId = os.getenv("ANGEL_CLIENT_ID")
+        password = os.getenv("ANGEL_PASSWORD")
+        totp_secret = os.getenv("ANGEL_TOTP_SECRET")
+        totp = pyotp.TOTP(totp_secret).now()
+        session = smartApi.generateSession(clientId, password, totp)
+        smartApi.setAccessToken(session["data"]["jwtToken"])
 
         symbol_map = {
             "RELIANCE": "2885", "INFY": "1594", "TCS": "11536", "HDFCBANK": "1333", "ICICIBANK": "4963",
