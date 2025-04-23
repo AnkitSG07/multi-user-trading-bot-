@@ -463,7 +463,7 @@ def webhook(userId):
 @app.route("/webhook-angelone/<userId>", methods=["POST"])
 def webhook_angelone(userId):
     import pyotp
-    from smartapi_sdk.smartConnect import SmartConnect  # Make sure this is the correct import
+    from SmartApi.smartConnect import SmartConnect  # Make sure this is the correct import
 
     users = load_users()
     if userId not in users:
@@ -479,15 +479,15 @@ def webhook_angelone(userId):
 
     try:
         # Step 1: Fresh login to get JWT token
-        smartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
+        SmartApi = SmartConnect(api_key=os.getenv("ANGEL_API_KEY"))
         clientId = os.getenv("ANGEL_CLIENT_ID")
         password = os.getenv("ANGEL_PASSWORD")
         totp_secret = os.getenv("ANGEL_TOTP_SECRET")
         totp = pyotp.TOTP(totp_secret).now()
 
-        session = smartApi.generateSession(clientId, password, totp)
+        session = SmartApi.generateSession(clientId, password, totp)
         jwt_token = session["data"]["jwtToken"]
-        smartApi.setAccessToken(jwt_token)
+        SmartApi.setAccessToken(jwt_token)
 
         # Step 2: Prepare order
         symbol_map = {
@@ -512,7 +512,7 @@ def webhook_angelone(userId):
             "quantity": quantity
         }
 
-        order_id = smartApi.placeOrder(orderparams)
+        order_id = SmartApi.placeOrder(orderparams)
 
         # Step 3: Log the trade
         log_trade(userId, {
