@@ -315,7 +315,7 @@ def connect_angel():
         users[userId]["broker"] = "angelone"
         save_users(users)
 
-        return jsonify({"status": "success", "message": "✅ Angel One connected successfully"})
+        return jsonify({"status": "success", "message": "✅ Angel One connected successfully"}, "auth_token": session["data"]["jwtToken"])
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
