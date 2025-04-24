@@ -1,7 +1,5 @@
 import gspread
 import requests
-import os
-import json
 from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -12,8 +10,9 @@ def get_sheet(sheet_name="Angel token"):
     if response.status_code != 200:
         raise Exception("Failed to fetch service_account.json from GitHub.")
 
-    with open("service_account.json", "w") as f:
-        f.write(response.text)
+    # ✅ Write in binary mode to preserve PEM format
+    with open("service_account.json", "wb") as f:
+        f.write(response.content)
 
     # ✅ Set up gspread with scopes
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -21,8 +20,7 @@ def get_sheet(sheet_name="Angel token"):
     client = gspread.authorize(creds)
 
     # 📄 Access the sheet
-    sheet = client.open(sheet_name).sheet1
-    return sheet
+    return client.open(sheet_name).sheet1
 
 def write_token_to_sheet(user_id, token):
     sheet = get_sheet("Angel token")
